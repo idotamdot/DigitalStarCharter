@@ -509,6 +509,8 @@ export class MemStorage implements IStorage {
         ...constellation,
         id,
         createdAt,
+        description: constellation.description || null,
+        backgroundTheme: constellation.backgroundTheme || null
       });
     });
   }

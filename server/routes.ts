@@ -433,7 +433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/constellations/:id", requireAuth, async (req, res) => {
+  app.patch("/api/constellations/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const constellation = await storage.getConstellation(id);
