@@ -7,7 +7,8 @@ import {
   insertBusinessProfileSchema,
   insertBrandingInfoSchema,
   insertSocialMediaPlanSchema,
-  insertSubscriptionSchema
+  insertSubscriptionSchema,
+  insertConstellationSchema
 } from "@shared/schema";
 import session from "express-session";
 import MemoryStore from "memorystore";
@@ -377,6 +378,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedSubscription);
     } catch (error) {
       res.status(500).json({ message: "Error updating subscription" });
+    }
+  });
+
+  // Constellation routes
+  app.get("/api/constellations", async (req, res) => {
+    try {
+      const constellations = await storage.getAllConstellations();
+      res.json(constellations);
+    } catch (error) {
+      console.error("Error fetching constellations:", error);
+      res.status(500).json({ message: "Error fetching constellations" });
+    }
+  });
+
+  app.get("/api/constellations/region/:region", async (req, res) => {
+    try {
+      const constellation = await storage.getConstellationByRegion(req.params.region);
+      if (!constellation) {
+        return res.status(404).json({ message: "Constellation not found for region" });
+      }
+      res.json(constellation);
+    } catch (error) {
+      console.error("Error fetching constellation by region:", error);
+      res.status(500).json({ message: "Error fetching constellation by region" });
+    }
+  });
+
+  app.get("/api/constellations/:id", async (req, res) => {
+    try {
+      const constellation = await storage.getConstellation(parseInt(req.params.id));
+      if (!constellation) {
+        return res.status(404).json({ message: "Constellation not found" });
+      }
+      res.json(constellation);
+    } catch (error) {
+      console.error("Error fetching constellation:", error);
+      res.status(500).json({ message: "Error fetching constellation" });
+    }
+  });
+
+  app.post("/api/constellations", requireAuth, async (req, res) => {
+    try {
+      const insertData = insertConstellationSchema.parse(req.body);
+      const constellation = await storage.createConstellation(insertData);
+      res.status(201).json(constellation);
+    } catch (error) {
+      console.error("Error creating constellation:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(400).json({ message: "Error creating constellation" });
+    }
+  });
+
+  app.patch("/api/constellations/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const constellation = await storage.getConstellation(id);
+      
+      if (!constellation) {
+        return res.status(404).json({ message: "Constellation not found" });
+      }
+      
+      const updatedConstellation = await storage.updateConstellation(id, req.body);
+      res.json(updatedConstellation);
+    } catch (error) {
+      console.error("Error updating constellation:", error);
+      res.status(400).json({ message: "Error updating constellation" });
     }
   });
 
