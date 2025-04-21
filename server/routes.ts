@@ -450,6 +450,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User routes for constellation visualization
+  app.get("/api/users/region/:region", async (req, res) => {
+    try {
+      const { region } = req.params;
+      const users = await storage.getUsersByRegion(region);
+      
+      if (!users || users.length === 0) {
+        return res.status(404).json({ message: "No users found in this region" });
+      }
+      
+      // Return only necessary information for constellation visualization
+      const constellationUsers = users.map(user => ({
+        id: user.id,
+        fullName: user.fullName,
+        username: user.username,
+        starName: user.starName,
+        starColor: user.starColor,
+        starSize: user.starSize,
+        starPosition: user.starPosition,
+        role: user.role,
+        region: user.region
+      }));
+      
+      res.json(constellationUsers);
+    } catch (error) {
+      console.error("Error fetching users by region:", error);
+      res.status(500).json({ message: "Failed to fetch users by region" });
+    }
+  });
+
   // Resource routes
   app.get("/api/resources", async (req, res) => {
     try {
