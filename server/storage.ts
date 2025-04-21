@@ -101,6 +101,9 @@ export class MemStorage implements IStorage {
     
     // Add initial constellation data
     this.initializeConstellations();
+    
+    // Add 30 developers to each continent constellation
+    this.initializeGlobalDevelopers();
   }
 
   // User operations
@@ -471,32 +474,81 @@ export class MemStorage implements IStorage {
   }
   
   private initializeConstellations() {
-    // Add seed constellation data for different regions
+    // Add seed constellation data for different regions, now organized by continent
     const constellations: InsertConstellation[] = [
+      // North America
       {
-        region: "Texas",
-        name: "Lone Star Constellation",
-        description: "The founding constellation led by Jessica Elizabeth McGlothern, representing all members from Texas. Home of the 'Lone Star' founder.",
-        backgroundTheme: "desert-night",
+        region: "North America",
+        name: "North American Constellation",
+        description: "The founding continent led by Jessica Elizabeth McGlothern, representing all members from North America with a focus on innovation and entrepreneurship.",
+        backgroundTheme: "aurora-borealis",
         founderUserId: 1, // Assuming Jessica is user ID 1
         centerPoint: null,
         connections: null
       },
+      
+      // South America
       {
-        region: "California",
-        name: "Golden State Constellation",
-        description: "Representing all members from California, focusing on tech and creative businesses.",
-        backgroundTheme: "ocean-sunset",
+        region: "South America",
+        name: "South American Constellation",
+        description: "Representing all members from South America, known for creative solutions and vibrant development approaches.",
+        backgroundTheme: "amazon-night",
         founderUserId: 2,
         centerPoint: null,
         connections: null
       },
+      
+      // Europe
       {
-        region: "New York",
-        name: "Empire Constellation",
-        description: "Representing all members from New York, known for their innovative approach to business development.",
-        backgroundTheme: "city-night",
+        region: "Europe",
+        name: "European Constellation",
+        description: "Representing all members from Europe, with emphasis on sustainable development and digital transformation.",
+        backgroundTheme: "northern-lights",
         founderUserId: 3,
+        centerPoint: null,
+        connections: null
+      },
+      
+      // Africa
+      {
+        region: "Africa",
+        name: "African Constellation",
+        description: "Representing all members from Africa, pioneering mobile and accessible solutions for emerging markets.",
+        backgroundTheme: "savanna-sunset",
+        founderUserId: 4,
+        centerPoint: null,
+        connections: null
+      },
+      
+      // Asia
+      {
+        region: "Asia",
+        name: "Asian Constellation",
+        description: "Representing all members from Asia, leading in technological advancement and scalable solutions.",
+        backgroundTheme: "himalayan-peaks",
+        founderUserId: 5,
+        centerPoint: null,
+        connections: null
+      },
+      
+      // Australia/Oceania
+      {
+        region: "Oceania",
+        name: "Oceania Constellation",
+        description: "Representing all members from Australia and Oceania, known for innovative solutions in remote work and digital nomadism.",
+        backgroundTheme: "great-barrier",
+        founderUserId: 6,
+        centerPoint: null,
+        connections: null
+      },
+      
+      // Antarctica (Special Research Constellation)
+      {
+        region: "Antarctica",
+        name: "Antarctic Constellation",
+        description: "A special research-focused constellation for members working on climate tech, sustainability, and environmental solutions.",
+        backgroundTheme: "polar-ice",
+        founderUserId: 7,
         centerPoint: null,
         connections: null
       }
@@ -510,9 +562,97 @@ export class MemStorage implements IStorage {
         id,
         createdAt,
         description: constellation.description || null,
-        backgroundTheme: constellation.backgroundTheme || null
+        backgroundTheme: constellation.backgroundTheme || null,
+        centerPoint: constellation.centerPoint || null,
+        connections: constellation.connections || null
       });
     });
+  }
+  
+  private initializeGlobalDevelopers() {
+    // Define the continents
+    const continents = [
+      "North America", 
+      "South America", 
+      "Europe", 
+      "Africa", 
+      "Asia", 
+      "Oceania", 
+      "Antarctica"
+    ];
+    
+    // Define star colors for variety
+    const starColors = [
+      "#FFD700", // Gold
+      "#87CEEB", // Sky Blue
+      "#FF6347", // Tomato
+      "#20B2AA", // Light Sea Green
+      "#9370DB", // Medium Purple
+      "#F08080", // Light Coral
+      "#3CB371", // Medium Sea Green
+      "#00CED1", // Dark Turquoise
+      "#FF69B4", // Hot Pink
+      "#1E90FF"  // Dodger Blue
+    ];
+    
+    // For each continent, create 30 developers
+    continents.forEach(continent => {
+      for (let i = 1; i <= 30; i++) {
+        // Generate unique usernames and emails based on continent and number
+        const abbreviation = continent.split(' ')[0].substring(0, 3).toLowerCase();
+        const username = `dev_${abbreviation}_${i}`;
+        const email = `${username}@digitalpresence.com`;
+        
+        // Get user ID before creating
+        const userId = this.userId;
+        
+        // Create the user
+        const user: InsertUser = {
+          username,
+          password: "password123", // Simple default password
+          email,
+          fullName: `Developer ${i} (${continent})`,
+          role: "Full Stack Developer",
+          businessType: "Individual",
+          region: continent,
+          starName: `${continent} Dev ${i}`,
+          starColor: starColors[Math.floor(Math.random() * starColors.length)]
+        };
+        
+        // Add the user
+        this.createUser(user);
+        
+        // Create a business profile for each developer
+        const businessProfile: InsertBusinessProfile = {
+          userId,
+          businessName: `${user.fullName}'s Digital Services`,
+          industry: "Software Development",
+          stage: "Established",
+          description: `Full stack development services specializing in web and mobile applications.`,
+          location: continent,
+          website: `https://${username}.dev`
+        };
+        
+        this.createBusinessProfile(businessProfile);
+      }
+    });
+    
+    // Make Jessica Elizabeth McGlothern the North America founder
+    const jessicaUser = Array.from(this.users.values()).find(
+      user => user.username === "dev_nor_1"
+    );
+    
+    if (jessicaUser) {
+      this.updateUser(jessicaUser.id, {
+        fullName: "Jessica Elizabeth McGlothern",
+        username: "thelonestar",
+        email: "jessica@digitalpresence.com",
+        role: "Founder",
+        starName: "The Lone Star",
+        region: "North America",
+        starColor: "#FFD700", // Gold
+      });
+    }
   }
 }
 

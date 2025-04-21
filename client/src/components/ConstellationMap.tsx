@@ -1,8 +1,110 @@
 import React, { useEffect, useState } from "react";
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
-import { Constellation } from "@shared/schema";
+import { Constellation, User } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+
+// Helper function to get background gradient based on theme
+function getConstellationBackground(theme: string | null): string {
+  const themes: Record<string, string> = {
+    "aurora-borealis": "linear-gradient(to bottom, #000428, #004e92)",
+    "amazon-night": "linear-gradient(to bottom, #0f2027, #203a43, #2c5364)",
+    "northern-lights": "linear-gradient(to bottom, #134e5e, #71b280)",
+    "savanna-sunset": "linear-gradient(to bottom, #c31432, #240b36)",
+    "himalayan-peaks": "linear-gradient(to bottom, #1e3c72, #2a5298)",
+    "great-barrier": "linear-gradient(to bottom, #2980b9, #2c3e50)",
+    "polar-ice": "linear-gradient(to bottom, #7f7fd5, #86a8e7, #91eae4)",
+    "desert-night": "linear-gradient(to bottom, #232526, #414345)"
+  };
+  
+  return themes[theme || ""] || "linear-gradient(to bottom, #000000, #434343)";
+}
+
+// Component to render stars within a constellation
+interface ConstellationStarsProps {
+  region: string;
+}
+
+function ConstellationStars({ region }: ConstellationStarsProps) {
+  const [stars, setStars] = useState<JSX.Element[]>([]);
+  
+  // Query to fetch users in this region
+  const { data: users } = useQuery<User[]>({
+    queryKey: ['/api/users/region', region],
+    enabled: !!region,
+    retry: 1,
+  });
+  
+  useEffect(() => {
+    if (users && users.length > 0) {
+      // Generate random positions for stars
+      const starElements = users.map((user, index) => {
+        // Random position within the container
+        const top = Math.random() * 90; // %
+        const left = Math.random() * 90; // %
+        const size = user.starSize || Math.random() * 0.8 + 0.5; // 0.5-1.3rem
+        const color = user.starColor || "#ffffff";
+        const delay = Math.random() * 4; // s
+        
+        return (
+          <div
+            key={user.id || index}
+            className="absolute animate-pulse rounded-full"
+            style={{
+              top: `${top}%`,
+              left: `${left}%`,
+              width: `${size}rem`,
+              height: `${size}rem`,
+              backgroundColor: color,
+              boxShadow: `0 0 10px 2px ${color}`,
+              animationDuration: `${3 + delay}s`
+            }}
+            title={user.starName || user.fullName || `Star ${index + 1}`}
+          />
+        );
+      });
+      
+      setStars(starElements);
+    } else {
+      // Create placeholder stars if no users yet
+      const placeholderStars = Array.from({ length: 30 }).map((_, index) => {
+        const top = Math.random() * 90;
+        const left = Math.random() * 90;
+        const size = Math.random() * 0.8 + 0.5;
+        const colors = ["#FFD700", "#F8F8FF", "#FFFAFA", "#87CEEB", "#E6E6FA"];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        return (
+          <div
+            key={`placeholder-${index}`}
+            className="absolute animate-pulse rounded-full"
+            style={{
+              top: `${top}%`,
+              left: `${left}%`,
+              width: `${size}rem`,
+              height: `${size}rem`,
+              backgroundColor: color,
+              boxShadow: `0 0 10px 2px ${color}`,
+              animationDuration: `${Math.random() * 3 + 2}s`
+            }}
+            title={`Developer ${index + 1}`}
+          />
+        );
+      });
+      
+      setStars(placeholderStars);
+    }
+  }, [users, region]);
+  
+  return (
+    <div className="relative w-full h-full">
+      {stars}
+      <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+        {stars.length} stars
+      </div>
+    </div>
+  );
+}
 
 export function ConstellationMap() {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
@@ -121,9 +223,21 @@ export function ConstellationMap() {
                   <p>{regionConstellation.description}</p>
                   <div className="mt-4">
                     <h4 className="text-md font-medium">Theme: {regionConstellation.backgroundTheme || "Default"}</h4>
-                    {/* Placeholder for actual star visualization - would be a canvas or SVG in a real implementation */}
-                    <div className="mt-2 h-48 bg-slate-800 rounded-lg flex items-center justify-center text-white">
-                      <p>Constellation Visualization Placeholder</p>
+                    <div className="mt-2 h-64 bg-slate-900 rounded-lg relative overflow-hidden">
+                      {/* Background theme visualization */}
+                      <div 
+                        className="absolute inset-0 opacity-30" 
+                        style={{ 
+                          backgroundImage: getConstellationBackground(regionConstellation.backgroundTheme),
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center'
+                        }} 
+                      />
+                      
+                      {/* Stars visualization */}
+                      <div className="relative h-full w-full">
+                        <ConstellationStars region={regionConstellation.region} />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
