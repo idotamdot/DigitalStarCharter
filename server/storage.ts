@@ -21,6 +21,8 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<User>): Promise<User>;
+  getUsersByRegion(region: string): Promise<User[]>;
 
   // Business profile operations
   getBusinessProfile(id: number): Promise<BusinessProfile | undefined>;
@@ -51,6 +53,13 @@ export interface IStorage {
   getAllResources(tier?: string): Promise<Resource[]>;
   getResourcesByCategory(category: string, tier?: string): Promise<Resource[]>;
   createResource(resource: InsertResource): Promise<Resource>;
+  
+  // Constellation operations
+  getConstellation(id: number): Promise<Constellation | undefined>;
+  getConstellationByRegion(region: string): Promise<Constellation | undefined>;
+  getAllConstellations(): Promise<Constellation[]>;
+  createConstellation(constellation: InsertConstellation): Promise<Constellation>;
+  updateConstellation(id: number, constellation: Partial<Constellation>): Promise<Constellation>;
 }
 
 export class MemStorage implements IStorage {
@@ -60,6 +69,7 @@ export class MemStorage implements IStorage {
   private socialMediaPlans: Map<number, SocialMediaPlan>;
   private subscriptions: Map<number, Subscription>;
   private resources: Map<number, Resource>;
+  private constellations: Map<number, Constellation>;
   
   private userId: number;
   private businessProfileId: number;
@@ -67,6 +77,7 @@ export class MemStorage implements IStorage {
   private socialMediaId: number;
   private subscriptionId: number;
   private resourceId: number;
+  private constellationId: number;
 
   constructor() {
     this.users = new Map();
@@ -75,6 +86,7 @@ export class MemStorage implements IStorage {
     this.socialMediaPlans = new Map();
     this.subscriptions = new Map();
     this.resources = new Map();
+    this.constellations = new Map();
     
     this.userId = 1;
     this.businessProfileId = 1;
@@ -82,6 +94,7 @@ export class MemStorage implements IStorage {
     this.socialMediaId = 1;
     this.subscriptionId = 1;
     this.resourceId = 1;
+    this.constellationId = 1;
     
     // Add some initial resources
     this.initializeResources();
@@ -107,9 +120,39 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
     const now = new Date();
-    const user: User = { ...insertUser, id, createdAt: now };
+    const joinedDateStr = new Date().toISOString().split('T')[0]; // Convert to YYYY-MM-DD string
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      createdAt: now,
+      businessType: insertUser.businessType || null,
+      starName: insertUser.starName || null,
+      region: insertUser.region || null,
+      role: insertUser.role || null,
+      starColor: insertUser.starColor || null,
+      starPosition: null,
+      starSize: null,
+      joinedDate: joinedDateStr
+    };
     this.users.set(id, user);
     return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+    const existing = await this.getUser(id);
+    if (!existing) {
+      throw new Error(`User with id ${id} not found`);
+    }
+    
+    const updated = { ...existing, ...userData };
+    this.users.set(id, updated);
+    return updated;
+  }
+  
+  async getUsersByRegion(region: string): Promise<User[]> {
+    return Array.from(this.users.values()).filter(
+      (user) => user.region === region
+    );
   }
 
   // Business profile operations
@@ -125,7 +168,18 @@ export class MemStorage implements IStorage {
   
   async createBusinessProfile(profile: InsertBusinessProfile): Promise<BusinessProfile> {
     const id = this.businessProfileId++;
-    const businessProfile: BusinessProfile = { ...profile, id };
+    const businessProfile: BusinessProfile = { 
+      ...profile, 
+      id,
+      industry: profile.industry || null,
+      description: profile.description || null,
+      stage: profile.stage || null,
+      targetAudience: profile.targetAudience || null,
+      location: profile.location || null,
+      website: profile.website || null,
+      wizardProgress: profile.wizardProgress || null,
+      completedSteps: profile.completedSteps || null
+    };
     this.businessProfiles.set(id, businessProfile);
     return businessProfile;
   }
@@ -154,7 +208,17 @@ export class MemStorage implements IStorage {
   
   async createBrandingInfo(branding: InsertBrandingInfo): Promise<BrandingInfo> {
     const id = this.brandingId++;
-    const brandingInfo: BrandingInfo = { ...branding, id };
+    const brandingInfo: BrandingInfo = { 
+      ...branding, 
+      id,
+      logoUrl: branding.logoUrl || null,
+      primaryColor: branding.primaryColor || null,
+      secondaryColor: branding.secondaryColor || null,
+      typography: branding.typography || null,
+      brandValues: branding.brandValues || null,
+      tagline: branding.tagline || null,
+      missionStatement: branding.missionStatement || null
+    };
     this.brandingInfo.set(id, brandingInfo);
     return brandingInfo;
   }
@@ -183,7 +247,15 @@ export class MemStorage implements IStorage {
   
   async createSocialMediaPlan(plan: InsertSocialMediaPlan): Promise<SocialMediaPlan> {
     const id = this.socialMediaId++;
-    const socialMediaPlan: SocialMediaPlan = { ...plan, id };
+    const socialMediaPlan: SocialMediaPlan = { 
+      ...plan, 
+      id,
+      targetAudience: plan.targetAudience || null,
+      platforms: plan.platforms || null,
+      contentThemes: plan.contentThemes || null,
+      postFrequency: plan.postFrequency || null,
+      goals: plan.goals || null
+    };
     this.socialMediaPlans.set(id, socialMediaPlan);
     return socialMediaPlan;
   }
@@ -212,7 +284,13 @@ export class MemStorage implements IStorage {
   
   async createSubscription(subscription: InsertSubscription): Promise<Subscription> {
     const id = this.subscriptionId++;
-    const newSubscription: Subscription = { ...subscription, id };
+    const newSubscription: Subscription = { 
+      ...subscription, 
+      id,
+      endDate: subscription.endDate || null,
+      isActive: subscription.isActive !== undefined ? subscription.isActive : true,
+      paymentInfo: subscription.paymentInfo || null
+    };
     this.subscriptions.set(id, newSubscription);
     return newSubscription;
   }
@@ -259,7 +337,13 @@ export class MemStorage implements IStorage {
   
   async createResource(resource: InsertResource): Promise<Resource> {
     const id = this.resourceId++;
-    const newResource: Resource = { ...resource, id };
+    const newResource: Resource = { 
+      ...resource, 
+      id,
+      thumbnail: resource.thumbnail || null,
+      isPublic: resource.isPublic !== undefined ? resource.isPublic : true,
+      requiredTier: resource.requiredTier || null
+    };
     this.resources.set(id, newResource);
     return newResource;
   }
@@ -330,8 +414,57 @@ export class MemStorage implements IStorage {
     
     resources.forEach(resource => {
       const id = this.resourceId++;
-      this.resources.set(id, { ...resource, id });
+      this.resources.set(id, { 
+        ...resource, 
+        id,
+        thumbnail: resource.thumbnail || null,
+        isPublic: resource.isPublic !== undefined ? resource.isPublic : true,
+        requiredTier: resource.requiredTier || null
+      });
     });
+  }
+  
+  // Constellation operations
+  async getConstellation(id: number): Promise<Constellation | undefined> {
+    return this.constellations.get(id);
+  }
+  
+  async getConstellationByRegion(region: string): Promise<Constellation | undefined> {
+    return Array.from(this.constellations.values()).find(
+      (constellation) => constellation.region === region
+    );
+  }
+  
+  async getAllConstellations(): Promise<Constellation[]> {
+    return Array.from(this.constellations.values());
+  }
+  
+  async createConstellation(constellation: InsertConstellation): Promise<Constellation> {
+    const id = this.constellationId++;
+    const now = new Date();
+    const newConstellation: Constellation = { 
+      ...constellation, 
+      id,
+      createdAt: now,
+      description: constellation.description || null,
+      centerPoint: constellation.centerPoint || null,
+      connections: constellation.connections || null,
+      backgroundTheme: constellation.backgroundTheme || null
+    };
+    this.constellations.set(id, newConstellation);
+    
+    return newConstellation;
+  }
+  
+  async updateConstellation(id: number, constellationData: Partial<Constellation>): Promise<Constellation> {
+    const existing = await this.getConstellation(id);
+    if (!existing) {
+      throw new Error(`Constellation with id ${id} not found`);
+    }
+    
+    const updated = { ...existing, ...constellationData };
+    this.constellations.set(id, updated);
+    return updated;
   }
 }
 
