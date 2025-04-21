@@ -12,12 +12,20 @@ export const users = pgTable("users", {
   businessType: text("business_type"),
   createdAt: timestamp("created_at").defaultNow(),
   starName: text("star_name"), // Unique name for this member's star in the constellation
-  region: text("region"), // Geographic region (state/province/country)
+  region: text("region"), // Geographic region (continent)
+  subRegion: text("sub_region"), // Sub-region within the continent (area)
   role: text("role"), // Role in the constellation
   starPosition: jsonb("star_position"), // {x, y} coordinates in the constellation
   starColor: text("star_color"), // The color of the member's star
   starSize: numeric("star_size"), // The size of the member's star (based on contributions/reputation)
   joinedDate: date("joined_date").defaultNow(), // When the member joined
+  isGuidingStar: boolean("is_guiding_star").default(false), // Continent founder/guiding star
+  isAreaLeader: boolean("is_area_leader").default(false), // Leader of an area within a continent
+  isVoter: boolean("is_voter").default(false), // Has voting privileges
+  voterUntil: timestamp("voter_until"), // When voting privilege expires (for rotating voters)
+  invitedBy: integer("invited_by"), // Who invited this member
+  approvedBy: jsonb("approved_by"), // Array of user IDs who approved this member
+  characterEvaluation: text("character_evaluation"), // Notes from character evaluation
 });
 
 // Business profiles for users
@@ -86,14 +94,67 @@ export const resources = pgTable("resources", {
 // Constellation data
 export const constellations = pgTable("constellations", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(), // Name of this constellation (e.g., "The Texas Network")
-  region: text("region").notNull(), // Geographic region (e.g., "Texas")
-  founderUserId: integer("founder_user_id").notNull(), // The founder of this constellation
+  name: text("name").notNull().unique(), // Name of this constellation (e.g., "The North American Constellation")
+  region: text("region").notNull(), // Geographic region (continent)
+  founderUserId: integer("founder_user_id").notNull(), // The founder/guiding star of this constellation
   createdAt: timestamp("created_at").defaultNow(),
   description: text("description"),
   centerPoint: jsonb("center_point"), // {x, y} coordinates for the center of this constellation
   connections: jsonb("connections"), // Array of connection data between stars
   backgroundTheme: text("background_theme"), // The visual theme for this constellation
+  totalAreas: integer("total_areas").default(30), // Number of areas within this constellation (default 30)
+  activatedAreas: integer("activated_areas").default(0), // Number of areas that have been activated
+});
+
+// Continental Areas (sub-regions within continents)
+export const areas = pgTable("areas", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // Area name (e.g., "North America - Area 1")
+  constellationId: integer("constellation_id").notNull(), // Parent constellation
+  leaderId: integer("leader_id"), // Area leader (can be null if not assigned)
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  isActive: boolean("is_active").default(false), // Is this area activated with a leader
+  maxMembers: integer("max_members").default(30), // Maximum members in this area (default 30)
+  currentMembers: integer("current_members").default(0), // Current number of members
+});
+
+// Voting System
+export const votes = pgTable("votes", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(), // What is being voted on
+  description: text("description").notNull(),
+  createdBy: integer("created_by").notNull(), // User who created this vote
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  status: text("status").default("open"), // open, closed, approved, rejected
+  votingPool: jsonb("voting_pool"), // Array of user IDs who can vote
+  votesRequired: integer("votes_required").default(3), // How many unanimous votes needed
+  votesReceived: jsonb("votes_received"), // Array of {userId, vote: true/false, timestamp}
+  isUnanimous: boolean("is_unanimous").default(false), // Whether all votes are positive
+});
+
+// Forum system for continental guiding stars
+export const forumTopics = pgTable("forum_topics", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  createdBy: integer("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  content: text("content").notNull(),
+  category: text("category").notNull(), // Structure, Ideas, Updates, etc.
+  isPinned: boolean("is_pinned").default(false),
+  isLocked: boolean("is_locked").default(false),
+  lastActivityAt: timestamp("last_activity_at").defaultNow(),
+});
+
+// Forum replies
+export const forumReplies = pgTable("forum_replies", {
+  id: serial("id").primaryKey(),
+  topicId: integer("topic_id").notNull(),
+  createdBy: integer("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  content: text("content").notNull(),
+  isEdited: boolean("is_edited").default(false),
 });
 
 // Create insert schemas
@@ -105,8 +166,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
   businessType: true,
   starName: true,
   region: true,
+  subRegion: true,
   role: true,
   starColor: true,
+  isGuidingStar: true,
+  isAreaLeader: true,
+  isVoter: true,
+  invitedBy: true,
+  characterEvaluation: true,
 });
 
 export const insertBusinessProfileSchema = createInsertSchema(businessProfiles).omit({
@@ -131,7 +198,33 @@ export const insertResourceSchema = createInsertSchema(resources).omit({
 
 export const insertConstellationSchema = createInsertSchema(constellations).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
+  activatedAreas: true
+});
+
+export const insertAreaSchema = createInsertSchema(areas).omit({
+  id: true,
+  createdAt: true,
+  currentMembers: true
+});
+
+export const insertVoteSchema = createInsertSchema(votes).omit({
+  id: true,
+  createdAt: true,
+  votesReceived: true,
+  isUnanimous: true
+});
+
+export const insertForumTopicSchema = createInsertSchema(forumTopics).omit({
+  id: true,
+  createdAt: true,
+  lastActivityAt: true
+});
+
+export const insertForumReplySchema = createInsertSchema(forumReplies).omit({
+  id: true,
+  createdAt: true,
+  isEdited: true
 });
 
 // Export types
@@ -155,3 +248,15 @@ export type Resource = typeof resources.$inferSelect;
 
 export type InsertConstellation = z.infer<typeof insertConstellationSchema>;
 export type Constellation = typeof constellations.$inferSelect;
+
+export type InsertArea = z.infer<typeof insertAreaSchema>;
+export type Area = typeof areas.$inferSelect;
+
+export type InsertVote = z.infer<typeof insertVoteSchema>;
+export type Vote = typeof votes.$inferSelect;
+
+export type InsertForumTopic = z.infer<typeof insertForumTopicSchema>;
+export type ForumTopic = typeof forumTopics.$inferSelect;
+
+export type InsertForumReply = z.infer<typeof insertForumReplySchema>;
+export type ForumReply = typeof forumReplies.$inferSelect;

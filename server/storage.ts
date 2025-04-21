@@ -134,11 +134,19 @@ export class MemStorage implements IStorage {
       businessType: insertUser.businessType || null,
       starName: insertUser.starName || null,
       region: insertUser.region || null,
+      subRegion: insertUser.subRegion || null,
       role: insertUser.role || null,
       starColor: insertUser.starColor || null,
       starPosition: null,
       starSize: null,
-      joinedDate: joinedDateStr
+      joinedDate: joinedDateStr,
+      isGuidingStar: insertUser.isGuidingStar || false,
+      isAreaLeader: insertUser.isAreaLeader || false,
+      isVoter: insertUser.isVoter || false,
+      voterUntil: null,
+      invitedBy: insertUser.invitedBy || null,
+      approvedBy: null,
+      characterEvaluation: insertUser.characterEvaluation || null,
     };
     this.users.set(id, user);
     return user;
@@ -455,7 +463,9 @@ export class MemStorage implements IStorage {
       description: constellation.description || null,
       centerPoint: constellation.centerPoint || null,
       connections: constellation.connections || null,
-      backgroundTheme: constellation.backgroundTheme || null
+      backgroundTheme: constellation.backgroundTheme || null,
+      totalAreas: constellation.totalAreas || 30,
+      activatedAreas: 0
     };
     this.constellations.set(id, newConstellation);
     
