@@ -11,6 +11,12 @@ export function ConstellationMap() {
   const { data: constellations, isLoading, isError, refetch } = useQuery<Constellation[]>({
     queryKey: ['/api/constellations'],
     retry: 1,
+    onSuccess: (data) => {
+      console.log("Fetched constellations:", data);
+    },
+    onError: (error) => {
+      console.error("Error fetching constellations:", error);
+    }
   });
 
   // Query to fetch a specific region's constellation when selected
@@ -88,7 +94,7 @@ export function ConstellationMap() {
                     <p className="text-sm">{constellation.description}</p>
                   </CardContent>
                   <CardFooter>
-                    <p className="text-xs text-gray-500">Created: {new Date(constellation.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-500">Created: {constellation.createdAt ? new Date(constellation.createdAt).toLocaleDateString() : 'Unknown'}</p>
                   </CardFooter>
                 </Card>
               ))}

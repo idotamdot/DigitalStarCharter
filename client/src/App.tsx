@@ -11,6 +11,7 @@ import BrandQuestionnaire from "@/pages/BrandQuestionnaire";
 import SocialMediaPlan from "@/pages/SocialMediaPlan";
 import ServiceSelection from "@/pages/ServiceSelection";
 import ResourceLibrary from "@/pages/ResourceLibrary";
+import ConstellationMap from "@/components/ConstellationMap";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "./lib/queryClient";
@@ -31,6 +32,11 @@ function Router() {
       <Route path="/social-media-plan" component={SocialMediaPlan} />
       <Route path="/service-selection" component={ServiceSelection} />
       <Route path="/resources" component={ResourceLibrary} />
+      <Route path="/constellations">
+        <div className="container mx-auto py-6">
+          <ConstellationMap />
+        </div>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

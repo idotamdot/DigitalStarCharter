@@ -35,6 +35,7 @@ const navLinks: NavLink[] = [
   { text: "About Us", href: "/#about" },
   { text: "Dashboard", href: "/dashboard", requiresAuth: true },
   { text: "Resources", href: "/resources", requiresAuth: true },
+  { text: "Constellations", href: "/constellations", requiresAuth: true },
 ];
 
 const Navbar = () => {
