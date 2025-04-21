@@ -98,6 +98,9 @@ export class MemStorage implements IStorage {
     
     // Add some initial resources
     this.initializeResources();
+    
+    // Add initial constellation data
+    this.initializeConstellations();
   }
 
   // User operations
@@ -465,6 +468,49 @@ export class MemStorage implements IStorage {
     const updated = { ...existing, ...constellationData };
     this.constellations.set(id, updated);
     return updated;
+  }
+  
+  private initializeConstellations() {
+    // Add seed constellation data for different regions
+    const constellations: InsertConstellation[] = [
+      {
+        region: "Texas",
+        name: "Lone Star Constellation",
+        description: "The founding constellation led by Jessica Elizabeth McGlothern, representing all members from Texas. Home of the 'Lone Star' founder.",
+        backgroundTheme: "desert-night",
+        founderUserId: 1, // Assuming Jessica is user ID 1
+        centerPoint: null,
+        connections: null
+      },
+      {
+        region: "California",
+        name: "Golden State Constellation",
+        description: "Representing all members from California, focusing on tech and creative businesses.",
+        backgroundTheme: "ocean-sunset",
+        founderUserId: 2,
+        centerPoint: null,
+        connections: null
+      },
+      {
+        region: "New York",
+        name: "Empire Constellation",
+        description: "Representing all members from New York, known for their innovative approach to business development.",
+        backgroundTheme: "city-night",
+        founderUserId: 3,
+        centerPoint: null,
+        connections: null
+      }
+    ];
+    
+    constellations.forEach(constellation => {
+      const id = this.constellationId++;
+      const createdAt = new Date();
+      this.constellations.set(id, {
+        ...constellation,
+        id,
+        createdAt,
+      });
+    });
   }
 }
 

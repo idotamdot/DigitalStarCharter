@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { Constellation } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,13 +11,15 @@ export function ConstellationMap() {
   const { data: constellations, isLoading, isError, refetch } = useQuery<Constellation[]>({
     queryKey: ['/api/constellations'],
     retry: 1,
-    onSuccess: (data) => {
-      console.log("Fetched constellations:", data);
-    },
-    onError: (error) => {
-      console.error("Error fetching constellations:", error);
-    }
+    staleTime: 30000
   });
+
+  // Use useEffect for logging to avoid TypeScript errors with onSuccess/onError
+  useEffect(() => {
+    if (constellations) {
+      console.log("Fetched constellations:", constellations);
+    }
+  }, [constellations]);
 
   // Query to fetch a specific region's constellation when selected
   const { data: regionConstellation, isLoading: isRegionLoading } = useQuery<Constellation>({
