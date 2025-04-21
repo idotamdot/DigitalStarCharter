@@ -10,7 +10,9 @@ import {
   Subscription,
   InsertSubscription,
   Resource,
-  InsertResource
+  InsertResource,
+  Constellation,
+  InsertConstellation
 } from "@shared/schema";
 
 export interface IStorage {
