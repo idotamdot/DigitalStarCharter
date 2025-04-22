@@ -20,7 +20,13 @@ import {
   ForumTopic,
   InsertForumTopic,
   ForumReply,
-  InsertForumReply
+  InsertForumReply,
+  ServiceProviderAvailability,
+  InsertServiceProviderAvailability,
+  ServiceOffering,
+  InsertServiceOffering,
+  Appointment,
+  InsertAppointment
 } from "@shared/schema";
 
 export interface IStorage {
@@ -81,6 +87,32 @@ export interface IStorage {
   createForumTopic(topic: InsertForumTopic): Promise<ForumTopic>;
   getForumRepliesByTopic(topicId: number): Promise<ForumReply[]>;
   createForumReply(reply: InsertForumReply): Promise<ForumReply>;
+
+  // Appointment Scheduling operations
+  // Service Provider Availability
+  getProviderAvailability(userId: number): Promise<ServiceProviderAvailability[]>;
+  createProviderAvailability(availability: InsertServiceProviderAvailability): Promise<ServiceProviderAvailability>;
+  updateProviderAvailability(id: number, availability: Partial<ServiceProviderAvailability>): Promise<ServiceProviderAvailability>;
+  deleteProviderAvailability(id: number): Promise<void>;
+
+  // Service Offerings
+  getServiceOffering(id: number): Promise<ServiceOffering | undefined>;
+  getServiceOfferingsByProvider(providerId: number): Promise<ServiceOffering[]>;
+  getServiceOfferingsByCategory(category: string): Promise<ServiceOffering[]>;
+  getServiceOfferingsByTier(tier: string): Promise<ServiceOffering[]>;
+  createServiceOffering(offering: InsertServiceOffering): Promise<ServiceOffering>;
+  updateServiceOffering(id: number, offering: Partial<ServiceOffering>): Promise<ServiceOffering>;
+  deleteServiceOffering(id: number): Promise<void>;
+
+  // Appointments
+  getAppointment(id: number): Promise<Appointment | undefined>;
+  getAppointmentsByClient(clientId: number): Promise<Appointment[]>;
+  getAppointmentsByProvider(providerId: number): Promise<Appointment[]>;
+  getAppointmentsByService(serviceId: number): Promise<Appointment[]>;
+  getUpcomingAppointments(userId: number, isProvider: boolean): Promise<Appointment[]>;
+  createAppointment(appointment: InsertAppointment): Promise<Appointment>;
+  updateAppointment(id: number, appointment: Partial<Appointment>): Promise<Appointment>;
+  cancelAppointment(id: number): Promise<Appointment>;
 }
 
 export class MemStorage implements IStorage {
@@ -105,11 +137,17 @@ export class MemStorage implements IStorage {
   private votes: Map<number, Vote>;
   private forumTopics: Map<number, ForumTopic>;
   private forumReplies: Map<number, ForumReply>;
+  private serviceProviderAvailability: Map<number, ServiceProviderAvailability>;
+  private serviceOfferings: Map<number, ServiceOffering>;
+  private appointments: Map<number, Appointment>;
   
   private areaId: number;
   private voteId: number;
   private forumTopicId: number;
   private forumReplyId: number;
+  private availabilityId: number;
+  private serviceOfferingId: number;
+  private appointmentId: number;
   
   constructor() {
     this.users = new Map();
@@ -123,6 +161,9 @@ export class MemStorage implements IStorage {
     this.votes = new Map();
     this.forumTopics = new Map();
     this.forumReplies = new Map();
+    this.serviceProviderAvailability = new Map();
+    this.serviceOfferings = new Map();
+    this.appointments = new Map();
     
     this.userId = 1;
     this.businessProfileId = 1;
@@ -135,6 +176,9 @@ export class MemStorage implements IStorage {
     this.voteId = 1;
     this.forumTopicId = 1;
     this.forumReplyId = 1;
+    this.availabilityId = 1;
+    this.serviceOfferingId = 1;
+    this.appointmentId = 1;
     
     // Add some initial resources
     this.initializeResources();

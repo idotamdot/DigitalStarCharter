@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, numeric, time } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -157,6 +157,51 @@ export const forumReplies = pgTable("forum_replies", {
   isEdited: boolean("is_edited").default(false),
 });
 
+// Availability schedule for service providers
+export const serviceProviderAvailability = pgTable("service_provider_availability", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  dayOfWeek: integer("day_of_week").notNull(), // 0-6 (Sunday-Saturday)
+  startTime: time("start_time").notNull(),
+  endTime: time("end_time").notNull(),
+  timeZone: text("time_zone").notNull().default("UTC"),
+  isAvailable: boolean("is_available").default(true),
+});
+
+// Service offerings that can be booked
+export const serviceOfferings = pgTable("service_offerings", {
+  id: serial("id").primaryKey(),
+  providerId: integer("provider_id").notNull(), // User ID of the service provider
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  durationMinutes: integer("duration_minutes").notNull(),
+  price: numeric("price"),
+  currency: text("currency").default("USD"),
+  category: text("category").notNull(), // e.g., "Consultation", "Design Review", "Development", etc.
+  requiredTier: text("required_tier"), // Subscription tier required to book this service
+  maxBookingsPerDay: integer("max_bookings_per_day").default(5),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Scheduled appointments
+export const appointments = pgTable("appointments", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull(),
+  clientId: integer("client_id").notNull(), // User ID of the client booking the appointment
+  providerId: integer("provider_id").notNull(), // User ID of the service provider
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  timeZone: text("time_zone").notNull().default("UTC"),
+  status: text("status").notNull().default("scheduled"), // scheduled, confirmed, completed, cancelled, no-show
+  notes: text("notes"),
+  meetingLink: text("meeting_link"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  reminderSent: boolean("reminder_sent").default(false),
+  feedbackProvided: boolean("feedback_provided").default(false),
+});
+
 // Create insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -227,6 +272,23 @@ export const insertForumReplySchema = createInsertSchema(forumReplies).omit({
   isEdited: true
 });
 
+export const insertServiceProviderAvailabilitySchema = createInsertSchema(serviceProviderAvailability).omit({
+  id: true
+});
+
+export const insertServiceOfferingSchema = createInsertSchema(serviceOfferings).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertAppointmentSchema = createInsertSchema(appointments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  reminderSent: true,
+  feedbackProvided: true
+});
+
 // Export types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -260,3 +322,12 @@ export type ForumTopic = typeof forumTopics.$inferSelect;
 
 export type InsertForumReply = z.infer<typeof insertForumReplySchema>;
 export type ForumReply = typeof forumReplies.$inferSelect;
+
+export type InsertServiceProviderAvailability = z.infer<typeof insertServiceProviderAvailabilitySchema>;
+export type ServiceProviderAvailability = typeof serviceProviderAvailability.$inferSelect;
+
+export type InsertServiceOffering = z.infer<typeof insertServiceOfferingSchema>;
+export type ServiceOffering = typeof serviceOfferings.$inferSelect;
+
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+export type Appointment = typeof appointments.$inferSelect;
