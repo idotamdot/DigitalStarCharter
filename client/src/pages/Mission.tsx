@@ -82,7 +82,7 @@ export default function Mission() {
 
               <blockquote className="border-l-4 border-blue-500 pl-6 italic my-8 text-xl text-blue-200">
                 As stars unite to form constellations, so do we join in purpose.<br />
-                Together, we illuminate the path forward.<br />
+                Together, we illuminate the path forward, lighting a way in the dark, so each may find the path to true Freedom and Prosperity for all!<br />
                 This is our mission.
               </blockquote>
 
