@@ -12,6 +12,9 @@ import SocialMediaPlan from "@/pages/SocialMediaPlan";
 import ServiceSelection from "@/pages/ServiceSelection";
 import ResourceLibrary from "@/pages/ResourceLibrary";
 import ConstellationMap from "@/components/ConstellationMap";
+import ConstellationAreas from "@/pages/ConstellationAreas";
+import AreaDetail from "@/pages/AreaDetail";
+import GuidingStarForum, { TopicDetail } from "@/pages/GuidingStarForum";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "./lib/queryClient";
@@ -36,6 +39,18 @@ function Router() {
         <div className="container mx-auto py-6">
           <ConstellationMap />
         </div>
+      </Route>
+      <Route path="/constellations/:id">
+        {(params) => <ConstellationAreas />}
+      </Route>
+      <Route path="/areas/:id">
+        {(params) => <AreaDetail />}
+      </Route>
+      <Route path="/forum">
+        <GuidingStarForum />
+      </Route>
+      <Route path="/forum/topics/:id">
+        {(params) => <TopicDetail />}
       </Route>
       <Route component={NotFound} />
     </Switch>
