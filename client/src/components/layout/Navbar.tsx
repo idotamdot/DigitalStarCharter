@@ -413,7 +413,7 @@ const Navbar = () => {
 
                           <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
                             <DialogTrigger asChild>
-                              <Button className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white hover:from-primary-700 hover:to-secondary-700">
+                              <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
                                 Get Started
                               </Button>
                             </DialogTrigger>
@@ -423,7 +423,7 @@ const Navbar = () => {
                         <Button
                           onClick={handleLogout}
                           variant="outline"
-                          className="w-full border-primary-600 text-primary-600 hover:bg-primary-50"
+                          className="w-full border-blue-500 text-blue-400 hover:bg-blue-900/30"
                         >
                           Sign Out
                         </Button>
