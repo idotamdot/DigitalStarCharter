@@ -164,7 +164,7 @@ const Navbar = () => {
               .filter((link) => !link.href.startsWith("/#"))
               .map((link) => (
                 <Link key={link.href} href={link.href}>
-                  <a className="text-gray-600 hover:text-primary-600 px-3 py-2 text-sm font-medium">
+                  <a className="text-gray-300 hover:text-blue-400 px-3 py-2 text-sm font-medium">
                     {link.text}
                   </a>
                 </Link>
@@ -178,7 +178,7 @@ const Navbar = () => {
                       <DialogTrigger asChild>
                         <Button
                           variant="outline"
-                          className="hidden md:block border-primary-600 text-primary-600 hover:bg-primary-50"
+                          className="hidden md:block border-blue-500 text-blue-400 hover:bg-blue-900/30"
                         >
                           Sign In
                         </Button>
@@ -239,7 +239,7 @@ const Navbar = () => {
 
                     <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
                       <DialogTrigger asChild>
-                        <Button className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white hover:from-primary-700 hover:to-secondary-700">
+                        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
                           Get Started
                         </Button>
                       </DialogTrigger>
@@ -354,7 +354,7 @@ const Navbar = () => {
                   <Button
                     onClick={handleLogout}
                     variant="outline"
-                    className="border-primary-600 text-primary-600 hover:bg-primary-50"
+                    className="border-blue-500 text-blue-400 hover:bg-blue-900/30"
                   >
                     Sign Out
                   </Button>
@@ -367,11 +367,11 @@ const Navbar = () => {
           <div className="md:hidden flex items-center">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-gray-600">
+                <Button variant="ghost" size="icon" className="text-gray-300">
                   <HamburgerMenuIcon className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right">
+              <SheetContent side="right" className="bg-gray-900/95 border-gray-800">
                 <div className="flex flex-col space-y-4 mt-6">
                   {isHomePage &&
                     filteredLinks
@@ -380,7 +380,7 @@ const Navbar = () => {
                         <a
                           key={link.href}
                           href={link.href}
-                          className="text-gray-600 hover:text-primary-600 py-2 text-base font-medium"
+                          className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium"
                         >
                           {link.text}
                         </a>
@@ -390,7 +390,7 @@ const Navbar = () => {
                     .filter((link) => !link.href.startsWith("/#"))
                     .map((link) => (
                       <Link key={link.href} href={link.href}>
-                        <a className="text-gray-600 hover:text-primary-600 py-2 text-base font-medium">
+                        <a className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium">
                           {link.text}
                         </a>
                       </Link>
@@ -404,7 +404,7 @@ const Navbar = () => {
                             <DialogTrigger asChild>
                               <Button
                                 variant="outline"
-                                className="w-full border-primary-600 text-primary-600 hover:bg-primary-50"
+                                className="w-full border-blue-500 text-blue-400 hover:bg-blue-900/30"
                               >
                                 Sign In
                               </Button>
