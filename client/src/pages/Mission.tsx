@@ -37,7 +37,7 @@ export default function Mission() {
           
           <CardContent className="relative z-10 p-8 md:p-12">
             <div className="flex justify-center mb-8">
-              <div className="inline-flex items-center space-x-3 bg-gradient-to-r from-indigo-400 to-purple-500 px-6 py-2 rounded-full">
+              <div className="inline-flex items-center space-x-3 bg-gradient-to-r from-indigo-400 to-purple-500 px-6 py-2 rounded-full animate-pulse">
                 <Stars className="h-5 w-5 text-white" />
                 <h2 className="text-xl font-semibold text-white">Digital Presence</h2>
                 <Stars className="h-5 w-5 text-white" />
@@ -69,7 +69,7 @@ export default function Mission() {
                     "Sharing in collective success with equal dignity"
                   ].map((item, index) => (
                     <li key={index} className="flex items-start">
-                      <StarIcon className="h-5 w-5 text-yellow-400 mr-2 mt-1 flex-shrink-0" />
+                      <StarIcon className="h-5 w-5 text-blue-300 dark:text-purple-300 mr-2 mt-1 flex-shrink-0 animate-pulse" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -84,7 +84,9 @@ export default function Mission() {
               <div className="text-center pt-8">
                 <div className="inline-flex items-center justify-center">
                   <div className="h-px w-12 bg-gradient-to-r from-transparent to-indigo-500"></div>
-                  <Stars className="h-8 w-8 mx-4 text-indigo-400" />
+                  <div className="animate-[float_3s_ease-in-out_infinite]">
+                    <Stars className="h-8 w-8 mx-4 text-indigo-400" />
+                  </div>
                   <div className="h-px w-12 bg-gradient-to-l from-transparent to-indigo-500"></div>
                 </div>
               </div>

@@ -32,6 +32,7 @@ const navLinks: NavLink[] = [
   { text: "Services", href: "/#services" },
   { text: "Process", href: "/#process" },
   { text: "Pricing", href: "/#pricing" },
+  { text: "Mission", href: "/mission" },
   { text: "About Us", href: "/#about" },
   { text: "Dashboard", href: "/dashboard", requiresAuth: true },
   { text: "Resources", href: "/resources", requiresAuth: true },
