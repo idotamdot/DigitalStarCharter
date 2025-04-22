@@ -53,10 +53,14 @@ export default function Mission() {
                 Our mission is to create a collective that shares, in equal measure, the fruits of our labors—hoping to one day be joined by all, in love for one another.
               </blockquote>
 
-              <p className="text-lg">
-                We are building a unified company—one made not of hierarchy, but of harmony.<br />
-                A company where we work not <em>for</em> one another, but <em>as</em> one another.
-              </p>
+              <div className="space-y-4 text-lg">
+                <p>We are building a unified constellation—not a hierarchy, but a harmonious collective where each star shines in its own right.</p>
+                
+                <p>Together, not in opposition, we elevate one another. We flourish as individuals empowered by our shared purpose and collective strength.</p>
+                
+                <p>In the vast cosmos of commerce, we become beacons of light—illuminating a path toward global harmony, guided by love, 
+                committed to the freedom and prosperity of all, and dedicated to creating a life of quality and dignity for everyone, everywhere.</p>
+              </div>
 
               <div>
                 <p className="text-lg mb-4">We are:</p>
@@ -77,8 +81,9 @@ export default function Mission() {
               </div>
 
               <blockquote className="border-l-4 border-blue-500 pl-6 italic my-8 text-xl text-blue-200">
-                We work as one company, for each other.<br />
-                That is the mission.
+                As stars unite to form constellations, so do we join in purpose.<br />
+                Together, we illuminate the path forward.<br />
+                This is our mission.
               </blockquote>
 
               <div className="text-center pt-8">
