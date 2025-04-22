@@ -15,6 +15,7 @@ import ConstellationMap from "@/components/ConstellationMap";
 import ConstellationAreas from "@/pages/ConstellationAreas";
 import AreaDetail from "@/pages/AreaDetail";
 import GuidingStarForum, { TopicDetail } from "@/pages/GuidingStarForum";
+import Mission from "@/pages/Mission";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "./lib/queryClient";
@@ -52,6 +53,7 @@ function Router() {
       <Route path="/forum/topics/:id">
         {(params) => <TopicDetail />}
       </Route>
+      <Route path="/mission" component={Mission} />
       <Route component={NotFound} />
     </Switch>
   );
