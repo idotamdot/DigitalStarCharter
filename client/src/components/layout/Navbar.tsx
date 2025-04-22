@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { queryClient } from "@/lib/queryClient";
 import { HamburgerMenuIcon } from "@/lib/icons";
+import { Star } from "lucide-react";
 
 type NavLink = {
   text: string;
@@ -29,9 +30,7 @@ type NavLink = {
 
 const navLinks: NavLink[] = [
   { text: "Features", href: "/#features" },
-  { text: "Services", href: "/#services" },
-  { text: "Process", href: "/#process" },
-  { text: "Pricing", href: "/#pricing" },
+  { text: "Constellation Services", href: "/service-selection" },
   { text: "Mission", href: "/mission" },
   { text: "Join", href: "/join" },
   { text: "About Us", href: "/#about" },
@@ -130,16 +129,16 @@ const Navbar = () => {
   });
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md fixed w-full z-50 border-b border-gray-200">
+    <nav className="bg-gray-900/80 backdrop-blur-md fixed w-full z-50 border-b border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/">
               <a className="flex-shrink-0 flex items-center">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-secondary-600 flex items-center justify-center text-white font-bold text-lg">
-                  DP
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white">
+                  <Star className="h-5 w-5 text-yellow-300" />
                 </div>
-                <span className="ml-3 text-xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 text-transparent bg-clip-text">
+                <span className="ml-3 text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
                   Digital Presence
                 </span>
               </a>
@@ -155,7 +154,7 @@ const Navbar = () => {
                   <a
                     key={link.href}
                     href={link.href}
-                    className="text-gray-600 hover:text-primary-600 px-3 py-2 text-sm font-medium"
+                    className="text-gray-300 hover:text-blue-400 px-3 py-2 text-sm font-medium"
                   >
                     {link.text}
                   </a>
