@@ -69,8 +69,10 @@ export default function AreaDetail() {
     );
   }
 
-  const isFull = area.currentMembers >= area.maxMembers;
-  const occupancyPercentage = (area.currentMembers / area.maxMembers) * 100;
+  const currentMembers = area.currentMembers || 0;
+  const maxMembers = area.maxMembers || 30;
+  const isFull = currentMembers >= maxMembers;
+  const occupancyPercentage = (currentMembers / maxMembers) * 100;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -117,15 +119,15 @@ export default function AreaDetail() {
                     Member Capacity
                   </h3>
                   <div className="flex items-center justify-between mb-1 text-sm">
-                    <span>Current Members: {area.currentMembers}</span>
-                    <span>{area.maxMembers} Maximum</span>
+                    <span>Current Members: {currentMembers}</span>
+                    <span>{maxMembers} Maximum</span>
                   </div>
                   <Progress value={occupancyPercentage} className="h-2" />
                   <p className="text-xs text-gray-500 mt-1">
                     {isFull ? (
                       "This area is at full capacity"
                     ) : (
-                      `${area.maxMembers - area.currentMembers} spots available`
+                      `${maxMembers - currentMembers} spots available`
                     )}
                   </p>
                 </div>

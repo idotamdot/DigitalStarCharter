@@ -178,7 +178,7 @@ function TopicCard({ topic }: { topic: ForumTopic }) {
           </span>
           <span className="flex items-center">
             <Calendar className="w-3 h-3 mr-1" />
-            {format(new Date(topic.createdAt), 'MMM d, yyyy')}
+            {topic.createdAt ? format(new Date(topic.createdAt), 'MMM d, yyyy') : 'Unknown date'}
           </span>
           <span className="flex items-center">
             <MessageCircle className="w-3 h-3 mr-1" />
@@ -283,7 +283,7 @@ export function TopicDetail() {
             </span>
             <span className="flex items-center">
               <Calendar className="w-4 h-4 mr-1" />
-              {format(new Date(topic.createdAt), 'MMM d, yyyy')}
+              {topic.createdAt ? format(new Date(topic.createdAt), 'MMM d, yyyy') : 'Unknown date'}
             </span>
             {topic.category && (
               <Badge variant="outline">
@@ -321,9 +321,9 @@ export function TopicDetail() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-x-2 text-sm text-gray-500">
                       <User className="w-4 h-4" />
-                      <span>User ID: {reply.userId}</span>
+                      <span>Created by: {reply.createdBy}</span>
                       <span>•</span>
-                      <span>{format(new Date(reply.createdAt), 'MMM d, yyyy')}</span>
+                      <span>{reply.createdAt ? format(new Date(reply.createdAt), 'MMM d, yyyy') : 'Unknown date'}</span>
                       {reply.isEdited && <span className="text-xs italic">(edited)</span>}
                     </div>
                   </div>

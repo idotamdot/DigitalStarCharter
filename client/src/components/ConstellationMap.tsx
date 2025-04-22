@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { Constellation, User } from "@shared/schema";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight, Users, MessageSquare } from "lucide-react";
 
 // Helper function to get background gradient based on theme
 function getConstellationBackground(theme: string | null): string {
@@ -239,6 +241,28 @@ export function ConstellationMap() {
                         <ConstellationStars region={regionConstellation.region} />
                       </div>
                     </div>
+                  </div>
+                  
+                  <div className="mt-6 space-y-3">
+                    <Button asChild className="w-full flex justify-between items-center">
+                      <Link href={`/constellations/${regionConstellation.id}`}>
+                        <span className="flex items-center">
+                          <Users className="w-4 h-4 mr-2" />
+                          View Areas ({regionConstellation.totalAreas || 0})
+                        </span>
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    </Button>
+                    
+                    <Button asChild variant="outline" className="w-full flex justify-between items-center">
+                      <Link href="/forum">
+                        <span className="flex items-center">
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Guiding Star Forum
+                        </span>
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
