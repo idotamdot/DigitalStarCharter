@@ -903,6 +903,206 @@ export class MemStorage implements IStorage {
     return newReply;
   }
   
+  // Appointment Scheduling operations
+  // Service Provider Availability
+  async getProviderAvailability(userId: number): Promise<ServiceProviderAvailability[]> {
+    return Array.from(this.serviceProviderAvailability.values()).filter(
+      (availability) => availability.userId === userId
+    );
+  }
+  
+  async createProviderAvailability(availability: InsertServiceProviderAvailability): Promise<ServiceProviderAvailability> {
+    const id = this.availabilityId++;
+    
+    const newAvailability: ServiceProviderAvailability = {
+      ...availability,
+      id,
+      isAvailable: availability.isAvailable !== undefined ? availability.isAvailable : true
+    };
+    
+    this.serviceProviderAvailability.set(id, newAvailability);
+    return newAvailability;
+  }
+  
+  async updateProviderAvailability(id: number, availability: Partial<ServiceProviderAvailability>): Promise<ServiceProviderAvailability> {
+    const existing = this.serviceProviderAvailability.get(id);
+    if (!existing) {
+      throw new Error(`Availability with id ${id} not found`);
+    }
+    
+    const updated = { ...existing, ...availability };
+    this.serviceProviderAvailability.set(id, updated);
+    return updated;
+  }
+  
+  async deleteProviderAvailability(id: number): Promise<void> {
+    if (!this.serviceProviderAvailability.has(id)) {
+      throw new Error(`Availability with id ${id} not found`);
+    }
+    
+    this.serviceProviderAvailability.delete(id);
+  }
+  
+  // Service Offerings
+  async getServiceOffering(id: number): Promise<ServiceOffering | undefined> {
+    return this.serviceOfferings.get(id);
+  }
+  
+  async getServiceOfferingsByProvider(providerId: number): Promise<ServiceOffering[]> {
+    return Array.from(this.serviceOfferings.values()).filter(
+      (offering) => offering.providerId === providerId && offering.isActive
+    );
+  }
+  
+  async getServiceOfferingsByCategory(category: string): Promise<ServiceOffering[]> {
+    return Array.from(this.serviceOfferings.values()).filter(
+      (offering) => offering.category === category && offering.isActive
+    );
+  }
+  
+  async getServiceOfferingsByTier(tier: string): Promise<ServiceOffering[]> {
+    return Array.from(this.serviceOfferings.values()).filter(
+      (offering) => {
+        if (!offering.isActive) return false;
+        if (!offering.requiredTier) return true;
+        
+        if (tier === 'premium') return true;
+        if (tier === 'growth' && offering.requiredTier !== 'premium') return true;
+        if (tier === 'self-guided' && offering.requiredTier === 'self-guided') return true;
+        
+        return false;
+      }
+    );
+  }
+  
+  async createServiceOffering(offering: InsertServiceOffering): Promise<ServiceOffering> {
+    const id = this.serviceOfferingId++;
+    const now = new Date();
+    
+    const newOffering: ServiceOffering = {
+      ...offering,
+      id,
+      price: offering.price || null,
+      currency: offering.currency || 'USD',
+      requiredTier: offering.requiredTier || null,
+      maxBookingsPerDay: offering.maxBookingsPerDay || 5,
+      isActive: offering.isActive !== undefined ? offering.isActive : true,
+      createdAt: now
+    };
+    
+    this.serviceOfferings.set(id, newOffering);
+    return newOffering;
+  }
+  
+  async updateServiceOffering(id: number, offering: Partial<ServiceOffering>): Promise<ServiceOffering> {
+    const existing = this.serviceOfferings.get(id);
+    if (!existing) {
+      throw new Error(`Service offering with id ${id} not found`);
+    }
+    
+    const updated = { ...existing, ...offering };
+    this.serviceOfferings.set(id, updated);
+    return updated;
+  }
+  
+  async deleteServiceOffering(id: number): Promise<void> {
+    if (!this.serviceOfferings.has(id)) {
+      throw new Error(`Service offering with id ${id} not found`);
+    }
+    
+    this.serviceOfferings.delete(id);
+  }
+  
+  // Appointments
+  async getAppointment(id: number): Promise<Appointment | undefined> {
+    return this.appointments.get(id);
+  }
+  
+  async getAppointmentsByClient(clientId: number): Promise<Appointment[]> {
+    return Array.from(this.appointments.values()).filter(
+      (appointment) => appointment.clientId === clientId
+    );
+  }
+  
+  async getAppointmentsByProvider(providerId: number): Promise<Appointment[]> {
+    return Array.from(this.appointments.values()).filter(
+      (appointment) => appointment.providerId === providerId
+    );
+  }
+  
+  async getAppointmentsByService(serviceId: number): Promise<Appointment[]> {
+    return Array.from(this.appointments.values()).filter(
+      (appointment) => appointment.serviceId === serviceId
+    );
+  }
+  
+  async getUpcomingAppointments(userId: number, isProvider: boolean): Promise<Appointment[]> {
+    const now = new Date();
+    return Array.from(this.appointments.values()).filter(
+      (appointment) => {
+        const isUserInvolved = isProvider ? 
+          appointment.providerId === userId : 
+          appointment.clientId === userId;
+        
+        const isUpcoming = new Date(appointment.startTime) > now;
+        const isActive = appointment.status === 'scheduled' || appointment.status === 'confirmed';
+        
+        return isUserInvolved && isUpcoming && isActive;
+      }
+    ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+  }
+  
+  async createAppointment(appointment: InsertAppointment): Promise<Appointment> {
+    const id = this.appointmentId++;
+    const now = new Date();
+    
+    const newAppointment: Appointment = {
+      ...appointment,
+      id,
+      notes: appointment.notes || null,
+      meetingLink: appointment.meetingLink || null,
+      createdAt: now,
+      updatedAt: now,
+      reminderSent: false,
+      feedbackProvided: false
+    };
+    
+    this.appointments.set(id, newAppointment);
+    return newAppointment;
+  }
+  
+  async updateAppointment(id: number, appointment: Partial<Appointment>): Promise<Appointment> {
+    const existing = this.appointments.get(id);
+    if (!existing) {
+      throw new Error(`Appointment with id ${id} not found`);
+    }
+    
+    const updated = { 
+      ...existing, 
+      ...appointment,
+      updatedAt: new Date()
+    };
+    
+    this.appointments.set(id, updated);
+    return updated;
+  }
+  
+  async cancelAppointment(id: number): Promise<Appointment> {
+    const existing = this.appointments.get(id);
+    if (!existing) {
+      throw new Error(`Appointment with id ${id} not found`);
+    }
+    
+    const updated = { 
+      ...existing, 
+      status: 'cancelled',
+      updatedAt: new Date()
+    };
+    
+    this.appointments.set(id, updated);
+    return updated;
+  }
+  
   // Initialize 30 areas for each constellation
   private initializeAreas() {
     const constellations = Array.from(this.constellations.values());
