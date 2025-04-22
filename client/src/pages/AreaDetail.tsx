@@ -180,7 +180,7 @@ export default function AreaDetail() {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-sm font-medium mb-1">Creation Date</h3>
-                  <p>{new Date(area.createdAt).toLocaleDateString()}</p>
+                  <p>{area.createdAt ? new Date(area.createdAt).toLocaleDateString() : 'Unknown'}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium mb-1">Status</h3>
@@ -199,7 +199,7 @@ export default function AreaDetail() {
                   <h3 className="text-sm font-medium mb-1">Member Count</h3>
                   <p className="flex items-center">
                     <UserIcon className="w-4 h-4 mr-1" />
-                    {area.currentMembers} {area.currentMembers === 1 ? "member" : "members"}
+                    {currentMembers} {currentMembers === 1 ? "member" : "members"}
                   </p>
                 </div>
               </div>

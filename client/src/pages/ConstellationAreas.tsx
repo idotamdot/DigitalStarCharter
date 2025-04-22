@@ -105,7 +105,7 @@ export default function ConstellationAreas() {
             {constellation.activatedAreas} Activated
           </Badge>
           <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400">
-            {constellation.totalAreas - (constellation.activatedAreas || 0)} Pending
+            {(constellation.totalAreas || 30) - (constellation.activatedAreas || 0)} Pending
           </Badge>
         </div>
       </div>

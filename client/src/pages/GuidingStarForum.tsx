@@ -207,8 +207,8 @@ function TopicCard({ topic }: { topic: ForumTopic }) {
 }
 
 export function TopicDetail() {
-  const [, params] = useLocation();
-  const topicId = parseInt(params.id);
+  const [location] = useLocation();
+  const topicId = parseInt(location.split('/').pop() || '0');
 
   const {
     data: topic,
