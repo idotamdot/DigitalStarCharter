@@ -8,13 +8,11 @@ import {
   insertBrandingInfoSchema,
   insertSocialMediaPlanSchema,
   insertSubscriptionSchema,
-  insertConstellationSchema,
-  insertAreaSchema,
-  insertForumTopicSchema,
-  insertForumReplySchema
+  insertConstellationSchema
 } from "@shared/schema";
 import session from "express-session";
 import MemoryStore from "memorystore";
+import { registerGovernanceRoutes } from "./governance-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session store
@@ -555,6 +553,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching resource" });
     }
   });
+
+  // Register governance routes (areas, forums, etc.)
+  registerGovernanceRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

@@ -742,7 +742,9 @@ export class MemStorage implements IStorage {
       ...area,
       id,
       createdAt: now,
-      isActive: area.isActive || false,
+      description: area.description || null,
+      isActive: area.isActive === true,
+      leaderId: area.leaderId || null,
       maxMembers: area.maxMembers || 30,
       currentMembers: 0
     };
@@ -798,7 +800,11 @@ export class MemStorage implements IStorage {
         // Sort pinned topics first, then by last activity
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
-        return new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime();
+        
+        // Handle potential null dates safely
+        const dateA = a.lastActivityAt ? new Date(a.lastActivityAt) : new Date(0);
+        const dateB = b.lastActivityAt ? new Date(b.lastActivityAt) : new Date(0);
+        return dateB.getTime() - dateA.getTime();
       });
   }
   
@@ -821,7 +827,12 @@ export class MemStorage implements IStorage {
   async getForumRepliesByTopic(topicId: number): Promise<ForumReply[]> {
     return Array.from(this.forumReplies.values())
       .filter(reply => reply.topicId === topicId)
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      .sort((a, b) => {
+        // Handle potential null dates safely
+        const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+        const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+        return dateA.getTime() - dateB.getTime();
+      });
   }
   
   async createForumReply(reply: InsertForumReply): Promise<ForumReply> {
