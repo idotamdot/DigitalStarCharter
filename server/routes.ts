@@ -8,7 +8,10 @@ import {
   insertBrandingInfoSchema,
   insertSocialMediaPlanSchema,
   insertSubscriptionSchema,
-  insertConstellationSchema
+  insertConstellationSchema,
+  insertAreaSchema,
+  insertForumTopicSchema,
+  insertForumReplySchema
 } from "@shared/schema";
 import session from "express-session";
 import MemoryStore from "memorystore";
