@@ -12,7 +12,15 @@ import {
   Resource,
   InsertResource,
   Constellation,
-  InsertConstellation
+  InsertConstellation,
+  Area,
+  InsertArea,
+  Vote,
+  InsertVote,
+  ForumTopic,
+  InsertForumTopic,
+  ForumReply,
+  InsertForumReply
 } from "@shared/schema";
 
 export interface IStorage {
@@ -60,6 +68,19 @@ export interface IStorage {
   getAllConstellations(): Promise<Constellation[]>;
   createConstellation(constellation: InsertConstellation): Promise<Constellation>;
   updateConstellation(id: number, constellation: Partial<Constellation>): Promise<Constellation>;
+  
+  // Area operations
+  getArea(id: number): Promise<Area | undefined>;
+  getAreasByConstellation(constellationId: number): Promise<Area[]>;
+  createArea(area: InsertArea): Promise<Area>;
+  updateArea(id: number, area: Partial<Area>): Promise<Area>;
+  
+  // Forum operations
+  getForumTopic(id: number): Promise<ForumTopic | undefined>;
+  getAllForumTopics(): Promise<ForumTopic[]>;
+  createForumTopic(topic: InsertForumTopic): Promise<ForumTopic>;
+  getForumRepliesByTopic(topicId: number): Promise<ForumReply[]>;
+  createForumReply(reply: InsertForumReply): Promise<ForumReply>;
 }
 
 export class MemStorage implements IStorage {
@@ -79,6 +100,17 @@ export class MemStorage implements IStorage {
   private resourceId: number;
   private constellationId: number;
 
+  // Add maps for new tables
+  private areas: Map<number, Area>;
+  private votes: Map<number, Vote>;
+  private forumTopics: Map<number, ForumTopic>;
+  private forumReplies: Map<number, ForumReply>;
+  
+  private areaId: number;
+  private voteId: number;
+  private forumTopicId: number;
+  private forumReplyId: number;
+  
   constructor() {
     this.users = new Map();
     this.businessProfiles = new Map();
@@ -87,6 +119,10 @@ export class MemStorage implements IStorage {
     this.subscriptions = new Map();
     this.resources = new Map();
     this.constellations = new Map();
+    this.areas = new Map();
+    this.votes = new Map();
+    this.forumTopics = new Map();
+    this.forumReplies = new Map();
     
     this.userId = 1;
     this.businessProfileId = 1;
@@ -95,6 +131,10 @@ export class MemStorage implements IStorage {
     this.subscriptionId = 1;
     this.resourceId = 1;
     this.constellationId = 1;
+    this.areaId = 1;
+    this.voteId = 1;
+    this.forumTopicId = 1;
+    this.forumReplyId = 1;
     
     // Add some initial resources
     this.initializeResources();
@@ -104,6 +144,12 @@ export class MemStorage implements IStorage {
     
     // Add 30 developers to each continent constellation
     this.initializeGlobalDevelopers();
+    
+    // Create the 30 areas for each constellation
+    this.initializeAreas();
+    
+    // Create the forum for guiding stars
+    this.initializeGuidingStarForum();
   }
 
   // User operations
@@ -574,7 +620,9 @@ export class MemStorage implements IStorage {
         description: constellation.description || null,
         backgroundTheme: constellation.backgroundTheme || null,
         centerPoint: constellation.centerPoint || null,
-        connections: constellation.connections || null
+        connections: constellation.connections || null,
+        totalAreas: 30,
+        activatedAreas: 0
       });
     });
   }
@@ -616,17 +664,24 @@ export class MemStorage implements IStorage {
         // Get user ID before creating
         const userId = this.userId;
         
+        // Determine if this is the first user (Guiding Star) for this continent
+        const isGuidingStar = i === 1;
+        
         // Create the user
         const user: InsertUser = {
           username,
           password: "password123", // Simple default password
           email,
           fullName: `Developer ${i} (${continent})`,
-          role: "Full Stack Developer",
+          role: isGuidingStar ? "Guiding Star" : "Full Stack Developer",
           businessType: "Individual",
           region: continent,
-          starName: `${continent} Dev ${i}`,
-          starColor: starColors[Math.floor(Math.random() * starColors.length)]
+          starName: isGuidingStar ? `${continent} Guiding Star` : `${continent} Dev ${i}`,
+          starColor: isGuidingStar ? "#FFD700" : starColors[Math.floor(Math.random() * starColors.length)],
+          isGuidingStar,
+          isAreaLeader: false,
+          isVoter: false,
+          characterEvaluation: isGuidingStar ? "Founding member and Guiding Star of the continent." : null
         };
         
         // Add the user
@@ -635,10 +690,12 @@ export class MemStorage implements IStorage {
         // Create a business profile for each developer
         const businessProfile: InsertBusinessProfile = {
           userId,
-          businessName: `${user.fullName}'s Digital Services`,
+          businessName: isGuidingStar ? `${continent} Leadership Council` : `${user.fullName}'s Digital Services`,
           industry: "Software Development",
           stage: "Established",
-          description: `Full stack development services specializing in web and mobile applications.`,
+          description: isGuidingStar ? 
+            `Guiding Star of ${continent}, responsible for leading the continental constellation and its 30 areas.` : 
+            `Full stack development services specializing in web and mobile applications.`,
           location: continent,
           website: `https://${username}.dev`
         };
@@ -647,7 +704,7 @@ export class MemStorage implements IStorage {
       }
     });
     
-    // Make Jessica Elizabeth McGlothern the North America founder
+    // Make Jessica Elizabeth McGlothern the North America Guiding Star
     const jessicaUser = Array.from(this.users.values()).find(
       user => user.username === "dev_nor_1"
     );
@@ -657,12 +714,232 @@ export class MemStorage implements IStorage {
         fullName: "Jessica Elizabeth McGlothern",
         username: "thelonestar",
         email: "jessica@digitalpresence.com",
-        role: "Founder",
+        role: "Guiding Star & Founder",
         starName: "The Lone Star",
         region: "North America",
         starColor: "#FFD700", // Gold
+        isGuidingStar: true,
+        characterEvaluation: "Founding member of Digital Presence and Guiding Star of North America. The original Lone Star."
       });
     }
+  }
+  
+  // Area operations
+  async getArea(id: number): Promise<Area | undefined> {
+    return this.areas.get(id);
+  }
+  
+  async getAreasByConstellation(constellationId: number): Promise<Area[]> {
+    return Array.from(this.areas.values()).filter(
+      area => area.constellationId === constellationId
+    );
+  }
+  
+  async createArea(area: InsertArea): Promise<Area> {
+    const id = this.areaId++;
+    const now = new Date();
+    const newArea: Area = {
+      ...area,
+      id,
+      createdAt: now,
+      isActive: area.isActive || false,
+      maxMembers: area.maxMembers || 30,
+      currentMembers: 0
+    };
+    
+    this.areas.set(id, newArea);
+    
+    // Update the constellation's activatedAreas count if this area is active
+    if (newArea.isActive && newArea.leaderId) {
+      const constellation = await this.getConstellation(newArea.constellationId);
+      if (constellation) {
+        this.updateConstellation(constellation.id, {
+          activatedAreas: (constellation.activatedAreas || 0) + 1
+        });
+      }
+    }
+    
+    return newArea;
+  }
+  
+  async updateArea(id: number, areaData: Partial<Area>): Promise<Area> {
+    const existing = await this.getArea(id);
+    if (!existing) {
+      throw new Error(`Area with id ${id} not found`);
+    }
+    
+    // Check if we're activating the area
+    const activating = !existing.isActive && areaData.isActive;
+    
+    const updated = { ...existing, ...areaData };
+    this.areas.set(id, updated);
+    
+    // If we're activating the area, update the constellation
+    if (activating) {
+      const constellation = await this.getConstellation(existing.constellationId);
+      if (constellation) {
+        this.updateConstellation(constellation.id, {
+          activatedAreas: (constellation.activatedAreas || 0) + 1
+        });
+      }
+    }
+    
+    return updated;
+  }
+  
+  // Forum operations
+  async getForumTopic(id: number): Promise<ForumTopic | undefined> {
+    return this.forumTopics.get(id);
+  }
+  
+  async getAllForumTopics(): Promise<ForumTopic[]> {
+    return Array.from(this.forumTopics.values())
+      .sort((a, b) => {
+        // Sort pinned topics first, then by last activity
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime();
+      });
+  }
+  
+  async createForumTopic(topic: InsertForumTopic): Promise<ForumTopic> {
+    const id = this.forumTopicId++;
+    const now = new Date();
+    const newTopic: ForumTopic = {
+      ...topic,
+      id,
+      createdAt: now,
+      isPinned: topic.isPinned || false,
+      isLocked: topic.isLocked || false,
+      lastActivityAt: now
+    };
+    
+    this.forumTopics.set(id, newTopic);
+    return newTopic;
+  }
+  
+  async getForumRepliesByTopic(topicId: number): Promise<ForumReply[]> {
+    return Array.from(this.forumReplies.values())
+      .filter(reply => reply.topicId === topicId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }
+  
+  async createForumReply(reply: InsertForumReply): Promise<ForumReply> {
+    const id = this.forumReplyId++;
+    const now = new Date();
+    const newReply: ForumReply = {
+      ...reply,
+      id,
+      createdAt: now,
+      isEdited: false
+    };
+    
+    this.forumReplies.set(id, newReply);
+    
+    // Update the last activity timestamp on the topic
+    const topic = await this.getForumTopic(reply.topicId);
+    if (topic) {
+      this.forumTopics.set(topic.id, {
+        ...topic,
+        lastActivityAt: now
+      });
+    }
+    
+    return newReply;
+  }
+  
+  // Initialize 30 areas for each constellation
+  private initializeAreas() {
+    const constellations = Array.from(this.constellations.values());
+    
+    constellations.forEach(constellation => {
+      // Create 30 areas for this constellation
+      for (let i = 1; i <= 30; i++) {
+        const areaName = `${constellation.region} - Area ${i}`;
+        const areaDescription = `Area ${i} of the ${constellation.region} constellation. This area can include up to 30 members.`;
+        
+        this.createArea({
+          name: areaName,
+          constellationId: constellation.id,
+          description: areaDescription,
+          leaderId: null, // No leader assigned initially
+          isActive: false, // Areas start inactive
+          maxMembers: 30 // Default to 30 members max
+        });
+      }
+    });
+  }
+  
+  // Initialize the forum for Guiding Stars
+  private initializeGuidingStarForum() {
+    const welcomeTopic = this.createForumTopic({
+      title: "Welcome to the Guiding Stars Forum",
+      createdBy: 1, // Jessica (assuming she's ID 1)
+      content: `
+# Welcome to the Guiding Stars Forum
+
+This is a private forum for the seven Guiding Stars of our continental constellations to discuss our vision, structure, and future plans.
+
+As Guiding Stars, we each have the responsibility to:
+1. Divide our continent into 30 areas
+2. Select area leaders who will steward their respective areas
+3. Collaborate on global initiatives and character evaluations for new Guiding Stars
+4. Be the light the darkness lost the battle to
+
+Please introduce yourself and share your vision for your continental constellation.
+
+Best regards,
+Jessica Elizabeth McGlothern
+The Lone Star, North America
+      `,
+      category: "Announcements",
+      isPinned: true,
+      isLocked: false
+    });
+    
+    const structureTopic = this.createForumTopic({
+      title: "Continental Structure and Governance",
+      createdBy: 1, // Jessica (assuming she's ID 1)
+      content: `
+# Continental Structure and Governance
+
+This topic is for discussing how we should structure our continental governance.
+
+Each of us has 30 areas to manage within our continent, and we need to establish:
+
+1. How area leaders are selected (currently by the Guiding Star)
+2. How the 3 rotating voters for each area are chosen
+3. The process for onboarding the 30 founders per area
+4. Standardized character evaluation criteria
+5. Voting procedures for unanimous decisions
+
+Please share your thoughts and best practices from your continental experience.
+      `,
+      category: "Structure",
+      isPinned: true,
+      isLocked: false
+    });
+    
+    const futureTopic = this.createForumTopic({
+      title: "Vision for the Future of Digital Presence",
+      createdBy: 1, // Jessica (assuming she's ID 1)
+      content: `
+# Vision for the Future of Digital Presence
+
+As the founding Guiding Stars, we have a responsibility to shape the future of Digital Presence.
+
+Let's discuss:
+1. How we can ensure transparency in our operations
+2. Ideas for blockchain-based governance and voting
+3. Plans for scaling beyond our initial structure
+4. Maintaining our mission of being "the light that darkness lost the battle to"
+
+What are your visions for our platform's future?
+      `,
+      category: "Ideas",
+      isPinned: false,
+      isLocked: false
+    });
   }
 }
 
