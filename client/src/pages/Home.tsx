@@ -4,9 +4,6 @@ import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/home/HeroSection";
 import MissionSection from "@/components/home/MissionSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
-import ProcessSection from "@/components/home/ProcessSection";
-import PricingSection from "@/components/home/PricingSection";
-import TestimonialsSection from "@/components/home/TestimonialsSection";
 import CTASection from "@/components/home/CTASection";
 
 const Home = () => {
@@ -25,15 +22,12 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#0a0a1f]">
       <Navbar />
       <main className="flex-grow">
         <HeroSection />
         <FeaturesSection />
-        <ProcessSection />
         <MissionSection />
-        <PricingSection />
-        <TestimonialsSection />
         <CTASection />
       </main>
       <Footer />

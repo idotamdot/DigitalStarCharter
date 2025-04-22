@@ -352,7 +352,8 @@ const HeroSection = () => {
       </div>
       
       {/* CSS for animated stars */}
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .star {
           position: absolute;
           background-color: white;
@@ -369,7 +370,7 @@ const HeroSection = () => {
         .bg-gradient-radial {
           background-image: radial-gradient(circle, var(--tw-gradient-stops));
         }
-      `}</style>
+      `}} />
     </section>
   );
 };
