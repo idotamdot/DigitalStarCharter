@@ -169,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Social media routes
   app.post("/api/social-media-plans", requireAuth, async (req, res) => {
     try {
-      const businessProfile = await storage.getBusinessProfileByUserId(req.session.userId!);
+      const businessProfile = await storage.getBusinessProfileByUserId(req.user.id);
       
       if (!businessProfile) {
         return res.status(404).json({ message: "Business profile not found" });
@@ -194,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/social-media-plans/me", requireAuth, async (req, res) => {
     try {
-      const businessProfile = await storage.getBusinessProfileByUserId(req.session.userId!);
+      const businessProfile = await storage.getBusinessProfileByUserId(req.user.id);
       
       if (!businessProfile) {
         return res.status(404).json({ message: "Business profile not found" });
@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const businessProfile = await storage.getBusinessProfile(plan.businessId);
       
-      if (!businessProfile || businessProfile.userId !== req.session.userId) {
+      if (!businessProfile || businessProfile.userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to update this social media plan" });
       }
       
@@ -238,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Subscription routes
   app.post("/api/subscriptions", requireAuth, async (req, res) => {
     try {
-      const businessProfile = await storage.getBusinessProfileByUserId(req.session.userId!);
+      const businessProfile = await storage.getBusinessProfileByUserId(req.user.id);
       
       if (!businessProfile) {
         return res.status(404).json({ message: "Business profile not found" });
@@ -263,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/subscriptions/me", requireAuth, async (req, res) => {
     try {
-      const businessProfile = await storage.getBusinessProfileByUserId(req.session.userId!);
+      const businessProfile = await storage.getBusinessProfileByUserId(req.user.id);
       
       if (!businessProfile) {
         return res.status(404).json({ message: "Business profile not found" });
@@ -292,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const businessProfile = await storage.getBusinessProfile(subscription.businessId);
       
-      if (!businessProfile || businessProfile.userId !== req.session.userId) {
+      if (!businessProfile || businessProfile.userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to update this subscription" });
       }
       
@@ -538,7 +538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user is authorized (e.g., is the author)
-      if (path.authorId !== req.session.userId) {
+      if (path.authorId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to update this learning path" });
       }
       
@@ -574,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user is authorized (e.g., is the author)
-      if (path.authorId !== req.session.userId) {
+      if (path.authorId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to add steps to this learning path" });
       }
       
