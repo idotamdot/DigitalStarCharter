@@ -349,7 +349,7 @@ export default function JoinConstellation() {
                         </CardHeader>
                         <CardContent className="p-4 pt-2">
                           <div className="mt-2">
-                            <p className="text-sm font-medium mb-1">Requirements:</p>
+                            <p className="text-sm font-medium text-white mb-1">Requirements:</p>
                             <ul className="text-sm text-gray-200 list-disc list-inside">
                               {role.requirements.map((req, index) => (
                                 <li key={index}>{req}</li>
