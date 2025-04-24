@@ -12,7 +12,10 @@ import {
   insertLearningPathSchema,
   insertLearningPathStepSchema,
   insertUserLearningEnrollmentSchema,
-  insertUserLearningProgressSchema
+  insertUserLearningProgressSchema,
+  insertServiceProviderAvailabilitySchema,
+  insertServiceOfferingSchema,
+  insertAppointmentSchema
 } from "@shared/schema";
 import { setupAuth, requireAuth } from "./auth";
 import { registerGovernanceRoutes } from "./governance-routes";
@@ -473,6 +476,398 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(resource);
     } catch (error) {
       res.status(500).json({ message: "Error fetching resource" });
+    }
+  });
+
+  // Appointment scheduling routes
+  
+  // Provider availability routes
+  app.get("/api/provider/availability", requireAuth, async (req, res) => {
+    try {
+      // This gets the availability for the logged-in provider
+      const availability = await storage.getProviderAvailability(req.user.id);
+      res.json(availability);
+    } catch (error) {
+      console.error("Error fetching provider availability:", error);
+      res.status(500).json({ message: "Error fetching provider availability" });
+    }
+  });
+  
+  app.post("/api/provider/availability", requireAuth, async (req, res) => {
+    try {
+      const availabilityData = {
+        ...req.body,
+        userId: req.user.id
+      };
+      
+      const validatedData = insertServiceProviderAvailabilitySchema.parse(availabilityData);
+      const availability = await storage.createProviderAvailability(validatedData);
+      
+      res.status(201).json(availability);
+    } catch (error) {
+      console.error("Error creating provider availability:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating provider availability" });
+    }
+  });
+  
+  app.put("/api/provider/availability/:id", requireAuth, async (req, res) => {
+    try {
+      const availabilityId = parseInt(req.params.id);
+      const availabilityList = await storage.getProviderAvailability(req.user.id);
+      
+      const availability = availabilityList.find(a => a.id === availabilityId);
+      
+      if (!availability) {
+        return res.status(404).json({ message: "Availability slot not found" });
+      }
+      
+      if (availability.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this availability" });
+      }
+      
+      const updatedAvailability = await storage.updateProviderAvailability(availabilityId, req.body);
+      
+      res.json(updatedAvailability);
+    } catch (error) {
+      console.error("Error updating provider availability:", error);
+      res.status(500).json({ message: "Error updating provider availability" });
+    }
+  });
+  
+  app.delete("/api/provider/availability/:id", requireAuth, async (req, res) => {
+    try {
+      const availabilityId = parseInt(req.params.id);
+      const availabilityList = await storage.getProviderAvailability(req.user.id);
+      
+      const availability = availabilityList.find(a => a.id === availabilityId);
+      
+      if (!availability) {
+        return res.status(404).json({ message: "Availability slot not found" });
+      }
+      
+      if (availability.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to delete this availability" });
+      }
+      
+      await storage.deleteProviderAvailability(availabilityId);
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting provider availability:", error);
+      res.status(500).json({ message: "Error deleting provider availability" });
+    }
+  });
+  
+  // Service offerings routes
+  app.get("/api/service-offerings", async (req, res) => {
+    try {
+      let offerings;
+      
+      if (req.query.providerId) {
+        offerings = await storage.getServiceOfferingsByProvider(parseInt(req.query.providerId as string));
+      } else if (req.query.category) {
+        offerings = await storage.getServiceOfferingsByCategory(req.query.category as string);
+      } else if (req.query.tier) {
+        offerings = await storage.getServiceOfferingsByTier(req.query.tier as string);
+      } else {
+        // Get all active service offerings
+        const allOfferings = await Promise.all(
+          [
+            storage.getServiceOfferingsByTier("Dwarf Star"),
+            storage.getServiceOfferingsByTier("Giant Star"),
+            storage.getServiceOfferingsByTier("Supernova")
+          ]
+        );
+        
+        offerings = allOfferings.flat();
+      }
+      
+      res.json(offerings);
+    } catch (error) {
+      console.error("Error fetching service offerings:", error);
+      res.status(500).json({ message: "Error fetching service offerings" });
+    }
+  });
+  
+  app.get("/api/service-offerings/:id", async (req, res) => {
+    try {
+      const offering = await storage.getServiceOffering(parseInt(req.params.id));
+      
+      if (!offering) {
+        return res.status(404).json({ message: "Service offering not found" });
+      }
+      
+      res.json(offering);
+    } catch (error) {
+      console.error("Error fetching service offering:", error);
+      res.status(500).json({ message: "Error fetching service offering" });
+    }
+  });
+  
+  app.post("/api/service-offerings", requireAuth, async (req, res) => {
+    try {
+      const offeringData = {
+        ...req.body,
+        providerId: req.user.id
+      };
+      
+      const validatedData = insertServiceOfferingSchema.parse(offeringData);
+      const offering = await storage.createServiceOffering(validatedData);
+      
+      res.status(201).json(offering);
+    } catch (error) {
+      console.error("Error creating service offering:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating service offering" });
+    }
+  });
+  
+  app.put("/api/service-offerings/:id", requireAuth, async (req, res) => {
+    try {
+      const offeringId = parseInt(req.params.id);
+      const offering = await storage.getServiceOffering(offeringId);
+      
+      if (!offering) {
+        return res.status(404).json({ message: "Service offering not found" });
+      }
+      
+      if (offering.providerId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this service offering" });
+      }
+      
+      const updatedOffering = await storage.updateServiceOffering(offeringId, req.body);
+      
+      res.json(updatedOffering);
+    } catch (error) {
+      console.error("Error updating service offering:", error);
+      res.status(500).json({ message: "Error updating service offering" });
+    }
+  });
+  
+  app.delete("/api/service-offerings/:id", requireAuth, async (req, res) => {
+    try {
+      const offeringId = parseInt(req.params.id);
+      const offering = await storage.getServiceOffering(offeringId);
+      
+      if (!offering) {
+        return res.status(404).json({ message: "Service offering not found" });
+      }
+      
+      if (offering.providerId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to delete this service offering" });
+      }
+      
+      await storage.deleteServiceOffering(offeringId);
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting service offering:", error);
+      res.status(500).json({ message: "Error deleting service offering" });
+    }
+  });
+  
+  // Appointment routes
+  app.get("/api/appointments", requireAuth, async (req, res) => {
+    try {
+      let appointments;
+      
+      // Check if requesting as a client or provider
+      const isProvider = req.query.asProvider === 'true';
+      const userId = req.user.id;
+      
+      if (req.query.upcoming === 'true') {
+        appointments = await storage.getUpcomingAppointments(userId, isProvider);
+      } else if (isProvider) {
+        appointments = await storage.getAppointmentsByProvider(userId);
+      } else {
+        appointments = await storage.getAppointmentsByClient(userId);
+      }
+      
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      res.status(500).json({ message: "Error fetching appointments" });
+    }
+  });
+  
+  app.get("/api/appointments/:id", requireAuth, async (req, res) => {
+    try {
+      const appointment = await storage.getAppointment(parseInt(req.params.id));
+      
+      if (!appointment) {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+      
+      // Check if the user is either the client or the provider
+      if (appointment.clientId !== req.user.id && appointment.providerId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to view this appointment" });
+      }
+      
+      res.json(appointment);
+    } catch (error) {
+      console.error("Error fetching appointment:", error);
+      res.status(500).json({ message: "Error fetching appointment" });
+    }
+  });
+  
+  app.post("/api/appointments", requireAuth, async (req, res) => {
+    try {
+      // Verify service offering exists and is active
+      const serviceId = parseInt(req.body.serviceId);
+      const service = await storage.getServiceOffering(serviceId);
+      
+      if (!service) {
+        return res.status(404).json({ message: "Service offering not found" });
+      }
+      
+      if (!service.isActive) {
+        return res.status(400).json({ message: "This service is not currently available for booking" });
+      }
+      
+      // Check if user has the required subscription tier
+      if (service.requiredTier) {
+        const businessProfile = await storage.getBusinessProfileByUserId(req.user.id);
+        
+        if (businessProfile) {
+          const subscription = await storage.getSubscriptionByBusinessId(businessProfile.id);
+          
+          if (!subscription || !subscription.isActive || subscription.tier !== service.requiredTier) {
+            return res.status(403).json({ 
+              message: `This service requires a ${service.requiredTier} subscription` 
+            });
+          }
+        } else {
+          return res.status(403).json({ 
+            message: "You need a business profile and an active subscription to book this service" 
+          });
+        }
+      }
+      
+      // Check for appointment conflicts
+      const startTime = new Date(req.body.startTime);
+      const endTime = new Date(req.body.endTime);
+      
+      const providerAppointments = await storage.getAppointmentsByProvider(service.providerId);
+      const conflictingAppointment = providerAppointments.find(appointment => {
+        const appointmentStart = new Date(appointment.startTime);
+        const appointmentEnd = new Date(appointment.endTime);
+        
+        return (
+          appointment.status !== 'cancelled' &&
+          ((startTime >= appointmentStart && startTime < appointmentEnd) ||
+          (endTime > appointmentStart && endTime <= appointmentEnd) ||
+          (startTime <= appointmentStart && endTime >= appointmentEnd))
+        );
+      });
+      
+      if (conflictingAppointment) {
+        return res.status(409).json({ message: "The provider is not available during this time slot" });
+      }
+      
+      // Create the appointment
+      const appointmentData = {
+        ...req.body,
+        clientId: req.user.id,
+        providerId: service.providerId,
+        status: "scheduled"
+      };
+      
+      const validatedData = insertAppointmentSchema.parse(appointmentData);
+      const appointment = await storage.createAppointment(validatedData);
+      
+      res.status(201).json(appointment);
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating appointment" });
+    }
+  });
+  
+  app.put("/api/appointments/:id", requireAuth, async (req, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const appointment = await storage.getAppointment(appointmentId);
+      
+      if (!appointment) {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+      
+      // Check if the user is either the client or the provider
+      if (appointment.clientId !== req.user.id && appointment.providerId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this appointment" });
+      }
+      
+      // Limit what fields can be updated based on user role
+      let updateData: Partial<typeof appointment> = {};
+      
+      if (appointment.clientId === req.user.id) {
+        // Clients can only update notes
+        if (req.body.notes !== undefined) {
+          updateData.notes = req.body.notes;
+        }
+        
+        // Clients can cancel their appointment
+        if (req.body.status === "cancelled" && appointment.status === "scheduled") {
+          updateData.status = "cancelled";
+        }
+      } else if (appointment.providerId === req.user.id) {
+        // Providers can update status, notes, and meeting link
+        if (req.body.status) {
+          updateData.status = req.body.status;
+        }
+        
+        if (req.body.notes !== undefined) {
+          updateData.notes = req.body.notes;
+        }
+        
+        if (req.body.meetingLink !== undefined) {
+          updateData.meetingLink = req.body.meetingLink;
+        }
+      }
+      
+      const updatedAppointment = await storage.updateAppointment(appointmentId, updateData);
+      
+      res.json(updatedAppointment);
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+      res.status(500).json({ message: "Error updating appointment" });
+    }
+  });
+  
+  app.post("/api/appointments/:id/cancel", requireAuth, async (req, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const appointment = await storage.getAppointment(appointmentId);
+      
+      if (!appointment) {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+      
+      // Check if the user is either the client or the provider
+      if (appointment.clientId !== req.user.id && appointment.providerId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to cancel this appointment" });
+      }
+      
+      // Only scheduled appointments can be cancelled
+      if (appointment.status !== "scheduled") {
+        return res.status(400).json({ 
+          message: `Cannot cancel an appointment with status: ${appointment.status}` 
+        });
+      }
+      
+      const cancelledAppointment = await storage.cancelAppointment(appointmentId);
+      
+      res.json(cancelledAppointment);
+    } catch (error) {
+      console.error("Error cancelling appointment:", error);
+      res.status(500).json({ message: "Error cancelling appointment" });
     }
   });
 
