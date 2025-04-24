@@ -561,6 +561,317 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register governance routes (areas, forums, etc.)
   registerGovernanceRoutes(app);
 
+  // Learning Paths routes
+  // Get all learning paths (optionally filtered by category)
+  app.get("/api/learning-paths", async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const paths = await storage.getAllLearningPaths(category);
+      res.json(paths);
+    } catch (error) {
+      console.error("Error fetching learning paths:", error);
+      res.status(500).json({ message: "Error fetching learning paths" });
+    }
+  });
+
+  // Get a specific learning path by ID
+  app.get("/api/learning-paths/:id", async (req, res) => {
+    try {
+      const pathId = parseInt(req.params.id);
+      const path = await storage.getLearningPath(pathId);
+      
+      if (!path) {
+        return res.status(404).json({ message: "Learning path not found" });
+      }
+      
+      // Get steps for this path
+      const steps = await storage.getLearningPathSteps(pathId);
+      
+      res.json({ ...path, steps });
+    } catch (error) {
+      console.error("Error fetching learning path:", error);
+      res.status(500).json({ message: "Error fetching learning path" });
+    }
+  });
+
+  // Create a new learning path
+  app.post("/api/learning-paths", requireAuth, async (req, res) => {
+    try {
+      const pathInput = insertLearningPathSchema.parse(req.body);
+      const path = await storage.createLearningPath(pathInput);
+      res.status(201).json(path);
+    } catch (error) {
+      console.error("Error creating learning path:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating learning path" });
+    }
+  });
+
+  // Update a learning path
+  app.put("/api/learning-paths/:id", requireAuth, async (req, res) => {
+    try {
+      const pathId = parseInt(req.params.id);
+      const path = await storage.getLearningPath(pathId);
+      
+      if (!path) {
+        return res.status(404).json({ message: "Learning path not found" });
+      }
+      
+      // Check if user is authorized (e.g., is the author)
+      if (path.authorId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized to update this learning path" });
+      }
+      
+      const updatedPath = await storage.updateLearningPath(pathId, req.body);
+      res.json(updatedPath);
+    } catch (error) {
+      console.error("Error updating learning path:", error);
+      res.status(500).json({ message: "Error updating learning path" });
+    }
+  });
+
+  // Learning Path Steps routes
+  // Get steps for a learning path
+  app.get("/api/learning-paths/:pathId/steps", async (req, res) => {
+    try {
+      const pathId = parseInt(req.params.pathId);
+      const steps = await storage.getLearningPathSteps(pathId);
+      res.json(steps);
+    } catch (error) {
+      console.error("Error fetching learning path steps:", error);
+      res.status(500).json({ message: "Error fetching learning path steps" });
+    }
+  });
+
+  // Add a step to a learning path
+  app.post("/api/learning-paths/:pathId/steps", requireAuth, async (req, res) => {
+    try {
+      const pathId = parseInt(req.params.pathId);
+      const path = await storage.getLearningPath(pathId);
+      
+      if (!path) {
+        return res.status(404).json({ message: "Learning path not found" });
+      }
+      
+      // Check if user is authorized (e.g., is the author)
+      if (path.authorId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized to add steps to this learning path" });
+      }
+      
+      const stepInput = {
+        ...req.body,
+        pathId
+      };
+      
+      const validatedInput = insertLearningPathStepSchema.parse(stepInput);
+      const step = await storage.createLearningPathStep(validatedInput);
+      
+      res.status(201).json(step);
+    } catch (error) {
+      console.error("Error creating learning path step:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating learning path step" });
+    }
+  });
+
+  // Update a learning path step
+  app.put("/api/learning-path-steps/:id", requireAuth, async (req, res) => {
+    try {
+      const stepId = parseInt(req.params.id);
+      const step = await storage.getLearningPathStep(stepId);
+      
+      if (!step) {
+        return res.status(404).json({ message: "Learning path step not found" });
+      }
+      
+      // Check if user is authorized
+      const path = await storage.getLearningPath(step.pathId);
+      if (!path || path.authorId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized to update this step" });
+      }
+      
+      const updatedStep = await storage.updateLearningPathStep(stepId, req.body);
+      res.json(updatedStep);
+    } catch (error) {
+      console.error("Error updating learning path step:", error);
+      res.status(500).json({ message: "Error updating learning path step" });
+    }
+  });
+
+  // Delete a learning path step
+  app.delete("/api/learning-path-steps/:id", requireAuth, async (req, res) => {
+    try {
+      const stepId = parseInt(req.params.id);
+      const step = await storage.getLearningPathStep(stepId);
+      
+      if (!step) {
+        return res.status(404).json({ message: "Learning path step not found" });
+      }
+      
+      // Check if user is authorized
+      const path = await storage.getLearningPath(step.pathId);
+      if (!path || path.authorId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized to delete this step" });
+      }
+      
+      await storage.deleteLearningPathStep(stepId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting learning path step:", error);
+      res.status(500).json({ message: "Error deleting learning path step" });
+    }
+  });
+
+  // User Learning Enrollment routes
+  // Get user's enrollments
+  app.get("/api/user/enrollments", requireAuth, async (req, res) => {
+    try {
+      const enrollments = await storage.getUserLearningEnrollments(req.session.userId!);
+      
+      // For each enrollment, get the associated learning path
+      const enrichedEnrollments = await Promise.all(
+        enrollments.map(async (enrollment) => {
+          const path = await storage.getLearningPath(enrollment.pathId);
+          return {
+            ...enrollment,
+            path
+          };
+        })
+      );
+      
+      res.json(enrichedEnrollments);
+    } catch (error) {
+      console.error("Error fetching user enrollments:", error);
+      res.status(500).json({ message: "Error fetching user enrollments" });
+    }
+  });
+
+  // Enroll in a learning path
+  app.post("/api/learning-paths/:pathId/enroll", requireAuth, async (req, res) => {
+    try {
+      const pathId = parseInt(req.params.pathId);
+      const path = await storage.getLearningPath(pathId);
+      
+      if (!path) {
+        return res.status(404).json({ message: "Learning path not found" });
+      }
+      
+      // Check if user is already enrolled
+      const existingEnrollment = await storage.getUserEnrollmentByPathId(req.session.userId!, pathId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: "You are already enrolled in this learning path" });
+      }
+      
+      const enrollmentInput = {
+        userId: req.session.userId!,
+        pathId,
+        isActive: true
+      };
+      
+      const enrollment = await storage.createUserLearningEnrollment(enrollmentInput);
+      res.status(201).json(enrollment);
+    } catch (error) {
+      console.error("Error enrolling in learning path:", error);
+      res.status(500).json({ message: "Error enrolling in learning path" });
+    }
+  });
+
+  // Update enrollment (e.g., mark as inactive)
+  app.put("/api/enrollments/:id", requireAuth, async (req, res) => {
+    try {
+      const enrollmentId = parseInt(req.params.id);
+      const enrollment = await storage.getUserLearningEnrollment(enrollmentId);
+      
+      if (!enrollment) {
+        return res.status(404).json({ message: "Enrollment not found" });
+      }
+      
+      if (enrollment.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized to update this enrollment" });
+      }
+      
+      const updatedEnrollment = await storage.updateUserLearningEnrollment(enrollmentId, req.body);
+      res.json(updatedEnrollment);
+    } catch (error) {
+      console.error("Error updating enrollment:", error);
+      res.status(500).json({ message: "Error updating enrollment" });
+    }
+  });
+
+  // User Learning Progress routes
+  // Get user's progress for a learning path
+  app.get("/api/learning-paths/:pathId/progress", requireAuth, async (req, res) => {
+    try {
+      const pathId = parseInt(req.params.pathId);
+      const progress = await storage.getUserLearningProgress(req.session.userId!, pathId);
+      
+      // Get all steps to calculate overall progress
+      const steps = await storage.getLearningPathSteps(pathId);
+      const totalSteps = steps.length;
+      const completedSteps = progress.filter(p => p.completedAt).length;
+      
+      const overallProgress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+      
+      res.json({
+        progress,
+        overallProgress,
+        totalSteps,
+        completedSteps
+      });
+    } catch (error) {
+      console.error("Error fetching user progress:", error);
+      res.status(500).json({ message: "Error fetching user progress" });
+    }
+  });
+
+  // Update progress for a step (e.g., mark as completed)
+  app.post("/api/learning-path-steps/:stepId/progress", requireAuth, async (req, res) => {
+    try {
+      const stepId = parseInt(req.params.stepId);
+      const step = await storage.getLearningPathStep(stepId);
+      
+      if (!step) {
+        return res.status(404).json({ message: "Learning path step not found" });
+      }
+      
+      // Check if user is enrolled in this path
+      const enrollment = await storage.getUserEnrollmentByPathId(req.session.userId!, step.pathId);
+      if (!enrollment) {
+        return res.status(400).json({ message: "You are not enrolled in this learning path" });
+      }
+      
+      // Check if progress already exists
+      let progress = await storage.getUserProgressForStep(req.session.userId!, stepId);
+      
+      if (progress) {
+        // Update existing progress
+        progress = await storage.updateUserLearningProgress(progress.id, {
+          ...req.body,
+          completedAt: req.body.completed ? new Date() : null
+        });
+      } else {
+        // Create new progress
+        progress = await storage.createUserLearningProgress({
+          userId: req.session.userId!,
+          pathId: step.pathId,
+          stepId,
+          notes: req.body.notes || null,
+          completedAt: req.body.completed ? new Date() : null,
+          resourceRating: req.body.resourceRating || null
+        });
+      }
+      
+      res.json(progress);
+    } catch (error) {
+      console.error("Error updating step progress:", error);
+      res.status(500).json({ message: "Error updating step progress" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
