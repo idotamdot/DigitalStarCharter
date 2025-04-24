@@ -38,6 +38,7 @@ const navLinks: NavLink[] = [
   { text: "Dashboard", href: "/dashboard", requiresAuth: true },
   { text: "Resources", href: "/resources", requiresAuth: true },
   { text: "Resource Catalog", href: "/resource-catalog", requiresAuth: true },
+  { text: "Learning Paths", href: "/learning-paths" },
   { text: "Constellations", href: "/constellations", requiresAuth: true },
 ];
 
@@ -113,6 +114,7 @@ const Navbar = () => {
       if (location.startsWith("/dashboard") || 
           location.startsWith("/resources") || 
           location.startsWith("/resource-catalog") ||
+          location.startsWith("/learning-paths") ||
           location.startsWith("/constellations")) {
         window.location.href = "/";
       }
