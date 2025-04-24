@@ -189,6 +189,20 @@ const ResourceLibrary = () => {
             <p className="text-gray-300 mt-2 max-w-2xl mx-auto">
               Explore our constellation of resources designed to guide your professional journey through the Digital Presence universe
             </p>
+            <div className="mt-6">
+              <Button
+                variant="outline"
+                className="border border-blue-500/30 bg-transparent hover:bg-blue-900/20 text-blue-300"
+                onClick={() => navigate("/resource-catalog")}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="2" y1="12" x2="22" y2="12"/>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                Browse Knowledge Domains
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">

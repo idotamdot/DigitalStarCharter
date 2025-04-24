@@ -12,6 +12,7 @@ import SocialMediaPlan from "@/pages/SocialMediaPlan";
 import ServiceSelection from "@/pages/ServiceSelection";
 import ResourceLibrary from "@/pages/ResourceLibrary";
 import ResourceDetail from "@/pages/ResourceDetail";
+import ResourceCatalog from "@/pages/ResourceCatalog";
 import ConstellationMap from "@/components/ConstellationMap";
 import ConstellationAreas from "@/pages/ConstellationAreas";
 import AreaDetail from "@/pages/AreaDetail";
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/brand-questionnaire" component={BrandQuestionnaire} />
       <Route path="/social-media-plan" component={SocialMediaPlan} />
       <Route path="/service-selection" component={ServiceSelection} />
+      <Route path="/resource-catalog" component={ResourceCatalog} />
       <Route path="/resources" component={ResourceLibrary} />
       <Route path="/resources/:id">
         {(params) => <ResourceDetail params={params} />}
