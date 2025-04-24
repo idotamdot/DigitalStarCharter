@@ -82,7 +82,7 @@ const ServiceSelection = () => {
         description: "Please sign in to select constellation services",
         variant: "destructive",
       });
-      navigate("/auth");
+      navigate("/");
     }
   }, [user, userLoading, navigate, toast]);
 

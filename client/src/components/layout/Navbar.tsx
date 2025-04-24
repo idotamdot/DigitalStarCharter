@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
+import { Link as RouterLink } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -133,16 +134,16 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href="/">
-              <a className="flex-shrink-0 flex items-center">
+            <RouterLink href="/">
+              <div className="flex-shrink-0 flex items-center cursor-pointer">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white">
                   <Star className="h-5 w-5 text-yellow-300" />
                 </div>
                 <span className="ml-3 text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
                   Digital Presence
                 </span>
-              </a>
-            </Link>
+              </div>
+            </RouterLink>
           </div>
 
           {/* Desktop Navigation */}
@@ -163,9 +164,9 @@ const Navbar = () => {
             {filteredLinks
               .filter((link) => !link.href.startsWith("/#"))
               .map((link) => (
-                <Link key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 px-3 py-2 text-sm font-medium">
+                <RouterLink key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 px-3 py-2 text-sm font-medium">
                   {link.text}
-                </Link>
+                </RouterLink>
               ))}
 
             {!isLoading && (
@@ -387,9 +388,9 @@ const Navbar = () => {
                   {filteredLinks
                     .filter((link) => !link.href.startsWith("/#"))
                     .map((link) => (
-                      <Link key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium">
+                      <RouterLink key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium">
                         {link.text}
-                      </Link>
+                      </RouterLink>
                     ))}
 
                   {!isLoading && (
