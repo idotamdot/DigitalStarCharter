@@ -228,7 +228,7 @@ const ServiceSelection = () => {
               Constellation Services
             </h1>
             <p className="text-gray-300 mt-2 max-w-2xl mx-auto">
-              Select the business service package that best suits your organization's needs
+              Professional services our star network provides to illuminate your business needs
             </p>
           </div>
 
@@ -408,24 +408,24 @@ const ServiceSelection = () => {
                 <ZapIcon className="h-6 w-6 text-purple-400" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-center mb-8 text-white">Business Services FAQ</h2>
+            <h2 className="text-2xl font-bold text-center mb-8 text-white">Celestial Questions</h2>
             <div className="space-y-6">
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <h3 className="font-semibold text-white flex items-center">
                   <Star className="h-4 w-4 text-yellow-400 mr-2" />
-                  How does Digital Presence complete my business project?
+                  Can I change my constellation tier later?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  Our network of skilled remote professionals works collaboratively through our AI task allocation system. Each member specializes in different aspects of digital business development, ensuring comprehensive expertise for your project.
+                  Yes, any star can change their tier at any time. Your participation level will be adjusted at the next billing cycle.
                 </p>
               </div>
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <h3 className="font-semibold text-white flex items-center">
                   <Star className="h-4 w-4 text-yellow-400 mr-2" />
-                  What happens if I need more work than my allocated hours?
+                  How is profit-sharing calculated?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  Additional hours can be purchased at our standard hourly rate, or you can upgrade to a higher service tier. Your project manager will notify you before you reach your hour limit and discuss the best options.
+                  All stars who complete their weekly tasks receive an equal share of constellation profits, regardless of tier. Higher tiers provide additional services and privileges.
                 </p>
               </div>
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
@@ -434,16 +434,16 @@ const ServiceSelection = () => {
                   What payment methods are accepted?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  We accept all major credit cards, PayPal, bank transfers, and cryptocurrency payments for business services. For annual plans, we also offer invoicing with net-30 terms for established businesses.
+                  We accept all major credit cards, PayPal, and cryptocurrency payments for constellation memberships.
                 </p>
               </div>
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <h3 className="font-semibold text-white flex items-center">
                   <Star className="h-4 w-4 text-yellow-400 mr-2" />
-                  Can I customize a service package for my specific needs?
+                  How do I become eligible for the North Star Council?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  Absolutely! While our standard packages work well for most businesses, we're happy to create a custom service package tailored to your specific requirements. Contact our business development team to discuss your needs.
+                  The North Star Council consists of the first 30 members (15 UX Designers and 15 Developers). To be considered, you must maintain Supernova tier status and receive nomination from existing council members.
                 </p>
               </div>
             </div>
