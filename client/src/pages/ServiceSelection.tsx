@@ -413,19 +413,19 @@ const ServiceSelection = () => {
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <h3 className="font-semibold text-white flex items-center">
                   <Star className="h-4 w-4 text-yellow-400 mr-2" />
-                  Can I change my constellation tier later?
+                  How does Digital Presence complete my business project?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  Yes, any star can change their tier at any time. Your participation level will be adjusted at the next billing cycle.
+                  Our constellation of skilled professionals works collaboratively through our AI task allocation system. Each star specializes in different aspects of digital business development, ensuring comprehensive expertise for your project.
                 </p>
               </div>
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <h3 className="font-semibold text-white flex items-center">
                   <Star className="h-4 w-4 text-yellow-400 mr-2" />
-                  How is profit-sharing calculated?
+                  What happens if I need more work than my allocated hours?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  All stars who complete their weekly tasks receive an equal share of constellation profits, regardless of tier. Higher tiers provide additional services and privileges.
+                  Additional hours can be purchased at our standard hourly rate, or you can upgrade to a higher service tier. Your project navigator will notify you before you reach your hour limit and discuss the best options.
                 </p>
               </div>
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
@@ -434,16 +434,16 @@ const ServiceSelection = () => {
                   What payment methods are accepted?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  We accept all major credit cards, PayPal, and cryptocurrency payments for constellation memberships.
+                  We accept all major credit cards, PayPal, bank transfers, and cryptocurrency payments for business services. For annual plans, we also offer invoicing with net-30 terms for established businesses.
                 </p>
               </div>
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <h3 className="font-semibold text-white flex items-center">
                   <Star className="h-4 w-4 text-yellow-400 mr-2" />
-                  How do I become eligible for the North Star Council?
+                  Can I customize a service package for my specific needs?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  The North Star Council consists of the first 30 members (15 UX Designers and 15 Developers). To be considered, you must maintain Supernova tier status and receive nomination from existing council members.
+                  Absolutely! While our standard packages work well for most businesses, we're happy to create a custom constellation of services tailored to your specific requirements. Contact our stellar business development team to discuss your needs.
                 </p>
               </div>
             </div>
