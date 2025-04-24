@@ -10,7 +10,7 @@ import { StarButton } from "@/components/ui/star-button";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Sparkles, Rocket, Shield, ZapIcon, Diamond, Users } from "lucide-react";
+import { Star, Sparkles, Rocket, Shield, ZapIcon, Diamond, Users, Clock } from "lucide-react";
 
 interface ServiceTier {
   id: string;
@@ -21,6 +21,7 @@ interface ServiceTier {
   description: string;
   features: string[];
   popular?: boolean;
+  estimatedHours?: number;
 }
 
 const ServiceSelection = () => {
@@ -122,14 +123,16 @@ const ServiceSelection = () => {
       name: "Dwarf Star",
       icon: <Star className="h-8 w-8" />,
       color: "blue",
-      price: 29,
-      description: "Basic services for new constellation members just beginning their journey",
+      price: 499,
+      description: "Essential business development services for small teams and startups",
+      estimatedHours: 20,
       features: [
-        "Digital Presence skills assessment",
-        "Weekly AI task allocation",
-        "Profit-sharing participation",
-        "Resource library access",
-        "Guiding Star forum access",
+        "Digital brand assessment",
+        "Basic web presence setup",
+        "Social media strategy",
+        "Up to 20 hours of technical work",
+        "Single point of contact",
+        "Weekly progress reports",
       ],
     },
     {
@@ -137,15 +140,17 @@ const ServiceSelection = () => {
       name: "Giant Star",
       icon: <Sparkles className="h-8 w-8" />,
       color: "purple",
-      price: 79,
-      description: "Enhanced services for established constellation members",
+      price: 1299,
+      description: "Comprehensive business services for growing companies",
+      estimatedHours: 60,
       features: [
         "Everything in Dwarf Star",
-        "Priority task selection",
-        "Monthly 1-on-1 mentorship",
-        "Specialized skills certification",
-        "Constellation voting rights",
-        "Multi-role participation",
+        "Full website development",
+        "Digital marketing campaign",
+        "Content creation strategy",
+        "Up to 60 hours of technical work",
+        "Dedicated project manager",
+        "Biweekly strategy sessions",
       ],
       popular: true,
     },
@@ -154,16 +159,18 @@ const ServiceSelection = () => {
       name: "Supernova",
       icon: <Diamond className="h-8 w-8" />,
       color: "pink",
-      price: 199,
-      description: "Premium services for North Star Council candidates",
+      price: 2999,
+      description: "Premium full-scale business solutions for established organizations",
+      estimatedHours: 150,
       features: [
         "Everything in Giant Star",
-        "Guiding Star eligibility",
-        "Council voting rights",
-        "Constellation formation privileges",
-        "Custom AI skill development",
-        "Weekly strategy sessions",
-        "Unlimited role changes",
+        "Custom software development",
+        "Enterprise system integration",
+        "Advanced data analytics",
+        "Up to 150 hours of technical work",
+        "Dedicated team of specialists",
+        "24/7 priority support",
+        "Monthly executive briefings",
       ],
     },
   ];
@@ -221,7 +228,7 @@ const ServiceSelection = () => {
               Constellation Services
             </h1>
             <p className="text-gray-300 mt-2 max-w-2xl mx-auto">
-              Select the level of participation that matches your journey in our celestial network
+              Select the business service package that best suits your organization's needs
             </p>
           </div>
 
@@ -310,6 +317,15 @@ const ServiceSelection = () => {
                   <CardDescription className="text-gray-400 mt-2 text-center">
                     {tier.description}
                   </CardDescription>
+                  
+                  <div className="mt-3 flex justify-center items-center">
+                    <div className="px-3 py-1 rounded-full bg-gray-700/50 border border-gray-600">
+                      <span className="text-sm text-gray-300">
+                        <Clock className="inline-block h-3 w-3 mr-1 text-yellow-300" /> 
+                        <span className="font-medium">{tier.estimatedHours}</span> hours included
+                      </span>
+                    </div>
+                  </div>
                 </CardHeader>
                 
                 <CardContent className="pt-6">
@@ -392,24 +408,24 @@ const ServiceSelection = () => {
                 <ZapIcon className="h-6 w-6 text-purple-400" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-center mb-8 text-white">Celestial Questions</h2>
+            <h2 className="text-2xl font-bold text-center mb-8 text-white">Business Services FAQ</h2>
             <div className="space-y-6">
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <h3 className="font-semibold text-white flex items-center">
                   <Star className="h-4 w-4 text-yellow-400 mr-2" />
-                  Can I change my constellation tier later?
+                  How does Digital Presence complete my business project?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  Yes, any star can change their tier at any time. Your participation level will be adjusted at the next billing cycle.
+                  Our network of skilled remote professionals works collaboratively through our AI task allocation system. Each member specializes in different aspects of digital business development, ensuring comprehensive expertise for your project.
                 </p>
               </div>
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <h3 className="font-semibold text-white flex items-center">
                   <Star className="h-4 w-4 text-yellow-400 mr-2" />
-                  How is profit-sharing calculated?
+                  What happens if I need more work than my allocated hours?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  All stars who complete their weekly tasks receive an equal share of constellation profits, regardless of tier. Higher tiers provide additional services and privileges.
+                  Additional hours can be purchased at our standard hourly rate, or you can upgrade to a higher service tier. Your project manager will notify you before you reach your hour limit and discuss the best options.
                 </p>
               </div>
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
@@ -418,16 +434,16 @@ const ServiceSelection = () => {
                   What payment methods are accepted?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  We accept all major credit cards, PayPal, and cryptocurrency payments for constellation memberships.
+                  We accept all major credit cards, PayPal, bank transfers, and cryptocurrency payments for business services. For annual plans, we also offer invoicing with net-30 terms for established businesses.
                 </p>
               </div>
               <div className="p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <h3 className="font-semibold text-white flex items-center">
                   <Star className="h-4 w-4 text-yellow-400 mr-2" />
-                  How do I become eligible for the North Star Council?
+                  Can I customize a service package for my specific needs?
                 </h3>
                 <p className="text-gray-300 mt-2">
-                  The North Star Council consists of the first 30 members (15 UX Designers and 15 Developers). To be considered, you must maintain Supernova tier status and receive nomination from existing council members.
+                  Absolutely! While our standard packages work well for most businesses, we're happy to create a custom service package tailored to your specific requirements. Contact our business development team to discuss your needs.
                 </p>
               </div>
             </div>
