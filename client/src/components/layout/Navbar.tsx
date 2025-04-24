@@ -32,6 +32,7 @@ type NavLink = {
 const navLinks: NavLink[] = [
   { text: "Features", href: "/#features" },
   { text: "Constellation Services", href: "/service-selection" },
+  { text: "Appointments", href: "/appointments", requiresAuth: true },
   { text: "Mission", href: "/mission" },
   { text: "Join", href: "/join" },
   { text: "About Us", href: "/#about" },

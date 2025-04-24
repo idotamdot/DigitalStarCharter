@@ -10,6 +10,7 @@ import BusinessWizard from "@/pages/BusinessWizard";
 import BrandQuestionnaire from "@/pages/BrandQuestionnaire";
 import SocialMediaPlan from "@/pages/SocialMediaPlan";
 import ServiceSelection from "@/pages/ServiceSelection";
+import AppointmentScheduling from "@/pages/AppointmentScheduling";
 import ResourceLibrary from "@/pages/ResourceLibrary";
 import ResourceDetail from "@/pages/ResourceDetail";
 import ResourceCatalog from "@/pages/ResourceCatalog";
@@ -37,7 +38,8 @@ function Router() {
       <ProtectedRoute path="/business-wizard" component={BusinessWizard} />
       <ProtectedRoute path="/brand-questionnaire" component={BrandQuestionnaire} />
       <ProtectedRoute path="/social-media-plan" component={SocialMediaPlan} />
-      <ProtectedRoute path="/service-selection" component={ServiceSelection} />
+      <Route path="/service-selection" component={ServiceSelection} />
+      <ProtectedRoute path="/appointments" component={AppointmentScheduling} />
       <Route path="/resource-catalog" component={ResourceCatalog} />
       <Route path="/resources" component={ResourceLibrary} />
       <Route path="/resources/:id">

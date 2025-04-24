@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link as RouterLink } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -417,6 +417,15 @@ const ServiceSelection = () => {
             <p className="mt-4 text-gray-400 text-sm">
               {activeTab === "annual" ? "Annual billing, charged yearly" : "Monthly billing, cancel anytime"}
             </p>
+            {user && (
+              <div className="mt-6">
+                <RouterLink href="/appointments">
+                  <Button variant="outline" className="border-blue-500 text-blue-400 hover:bg-blue-900/30">
+                    Schedule a Consultation
+                  </Button>
+                </RouterLink>
+              </div>
+            )}
           </div>
 
           <div className="mt-24 max-w-3xl mx-auto bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-xl p-8">
