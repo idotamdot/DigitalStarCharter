@@ -335,7 +335,7 @@ export default function JoinConstellation() {
                         onClick={() => setSelectedRole(role.id)}
                       >
                         <CardHeader className="p-4 pb-2">
-                          <CardTitle className="text-lg flex items-center justify-between">
+                          <CardTitle className="text-lg text-white flex items-center justify-between">
                             <span>{role.title}</span>
                             {role.isPriorityForCouncil && (
                               <Badge className="bg-blue-900/40 text-blue-300 border-blue-700">
