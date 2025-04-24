@@ -210,6 +210,10 @@ export class MemStorage implements IStorage {
     this.serviceProviderAvailability = new Map();
     this.serviceOfferings = new Map();
     this.appointments = new Map();
+    this.learningPaths = new Map();
+    this.learningPathSteps = new Map();
+    this.userLearningEnrollments = new Map();
+    this.userLearningProgress = new Map();
     
     this.userId = 1;
     this.businessProfileId = 1;
@@ -225,6 +229,10 @@ export class MemStorage implements IStorage {
     this.availabilityId = 1;
     this.serviceOfferingId = 1;
     this.appointmentId = 1;
+    this.learningPathId = 1;
+    this.learningPathStepId = 1;
+    this.userLearningEnrollmentId = 1;
+    this.userLearningProgressId = 1;
     
     // Add some initial resources
     this.initializeResources();
@@ -240,6 +248,9 @@ export class MemStorage implements IStorage {
     
     // Create the forum for guiding stars
     this.initializeGuidingStarForum();
+    
+    // Create initial learning paths
+    this.initializeLearningPaths();
   }
 
   // User operations
@@ -1147,6 +1158,393 @@ export class MemStorage implements IStorage {
     
     this.appointments.set(id, updated);
     return updated;
+  }
+  
+  // Learning Path methods
+  async getLearningPath(id: number): Promise<LearningPath | undefined> {
+    return this.learningPaths.get(id);
+  }
+  
+  async getAllLearningPaths(category?: string): Promise<LearningPath[]> {
+    const paths = Array.from(this.learningPaths.values());
+    if (category) {
+      return paths.filter(path => path.category === category);
+    }
+    return paths;
+  }
+  
+  async createLearningPath(path: InsertLearningPath): Promise<LearningPath> {
+    const id = this.learningPathId++;
+    const newPath: LearningPath = {
+      id,
+      ...path,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.learningPaths.set(id, newPath);
+    return newPath;
+  }
+  
+  async updateLearningPath(id: number, path: Partial<LearningPath>): Promise<LearningPath> {
+    const existingPath = await this.getLearningPath(id);
+    if (!existingPath) {
+      throw new Error(`Learning path with id ${id} not found`);
+    }
+    
+    const updatedPath: LearningPath = {
+      ...existingPath,
+      ...path,
+      updatedAt: new Date()
+    };
+    
+    this.learningPaths.set(id, updatedPath);
+    return updatedPath;
+  }
+  
+  // Learning Path Steps methods
+  async getLearningPathStep(id: number): Promise<LearningPathStep | undefined> {
+    return this.learningPathSteps.get(id);
+  }
+  
+  async getLearningPathSteps(pathId: number): Promise<LearningPathStep[]> {
+    const steps = Array.from(this.learningPathSteps.values());
+    return steps
+      .filter(step => step.pathId === pathId)
+      .sort((a, b) => a.stepOrder - b.stepOrder);
+  }
+  
+  async createLearningPathStep(step: InsertLearningPathStep): Promise<LearningPathStep> {
+    const id = this.learningPathStepId++;
+    const newStep: LearningPathStep = {
+      id,
+      ...step
+    };
+    this.learningPathSteps.set(id, newStep);
+    return newStep;
+  }
+  
+  async updateLearningPathStep(id: number, step: Partial<LearningPathStep>): Promise<LearningPathStep> {
+    const existingStep = await this.getLearningPathStep(id);
+    if (!existingStep) {
+      throw new Error(`Learning path step with id ${id} not found`);
+    }
+    
+    const updatedStep: LearningPathStep = {
+      ...existingStep,
+      ...step
+    };
+    
+    this.learningPathSteps.set(id, updatedStep);
+    return updatedStep;
+  }
+  
+  async deleteLearningPathStep(id: number): Promise<void> {
+    if (!this.learningPathSteps.has(id)) {
+      throw new Error(`Learning path step with id ${id} not found`);
+    }
+    this.learningPathSteps.delete(id);
+  }
+  
+  // User Learning Enrollments methods
+  async getUserLearningEnrollments(userId: number): Promise<UserLearningEnrollment[]> {
+    const enrollments = Array.from(this.userLearningEnrollments.values());
+    return enrollments.filter(enrollment => enrollment.userId === userId);
+  }
+  
+  async getUserLearningEnrollment(id: number): Promise<UserLearningEnrollment | undefined> {
+    return this.userLearningEnrollments.get(id);
+  }
+  
+  async getUserEnrollmentByPathId(userId: number, pathId: number): Promise<UserLearningEnrollment | undefined> {
+    const enrollments = await this.getUserLearningEnrollments(userId);
+    return enrollments.find(enrollment => enrollment.pathId === pathId);
+  }
+  
+  async createUserLearningEnrollment(enrollment: InsertUserLearningEnrollment): Promise<UserLearningEnrollment> {
+    const id = this.userLearningEnrollmentId++;
+    const newEnrollment: UserLearningEnrollment = {
+      id,
+      ...enrollment,
+      enrolledAt: new Date(),
+      progressPercent: 0,
+      completedAt: null,
+      lastAccessedAt: new Date()
+    };
+    this.userLearningEnrollments.set(id, newEnrollment);
+    return newEnrollment;
+  }
+  
+  async updateUserLearningEnrollment(id: number, enrollment: Partial<UserLearningEnrollment>): Promise<UserLearningEnrollment> {
+    const existingEnrollment = await this.getUserLearningEnrollment(id);
+    if (!existingEnrollment) {
+      throw new Error(`User learning enrollment with id ${id} not found`);
+    }
+    
+    const updatedEnrollment: UserLearningEnrollment = {
+      ...existingEnrollment,
+      ...enrollment,
+      lastAccessedAt: new Date()
+    };
+    
+    this.userLearningEnrollments.set(id, updatedEnrollment);
+    return updatedEnrollment;
+  }
+  
+  // User Learning Progress methods
+  async getUserLearningProgress(userId: number, pathId: number): Promise<UserLearningProgress[]> {
+    const progresses = Array.from(this.userLearningProgress.values());
+    return progresses.filter(progress => progress.userId === userId && progress.pathId === pathId);
+  }
+  
+  async getUserProgressForStep(userId: number, stepId: number): Promise<UserLearningProgress | undefined> {
+    const progresses = Array.from(this.userLearningProgress.values());
+    return progresses.find(progress => progress.userId === userId && progress.stepId === stepId);
+  }
+  
+  async createUserLearningProgress(progress: InsertUserLearningProgress): Promise<UserLearningProgress> {
+    const id = this.userLearningProgressId++;
+    const newProgress: UserLearningProgress = {
+      id,
+      ...progress,
+      startedAt: new Date(),
+      completedAt: progress.completedAt || null
+    };
+    this.userLearningProgress.set(id, newProgress);
+    
+    // Update progress percentage in enrollment
+    const enrollment = await this.getUserEnrollmentByPathId(progress.userId, progress.pathId);
+    if (enrollment) {
+      const steps = await this.getLearningPathSteps(progress.pathId);
+      const completedSteps = await this.getUserLearningProgress(progress.userId, progress.pathId);
+      const completedCount = completedSteps.filter(s => s.completedAt).length;
+      const totalCount = steps.length;
+      
+      if (totalCount > 0) {
+        const progressPercent = Math.round((completedCount / totalCount) * 100);
+        
+        await this.updateUserLearningEnrollment(enrollment.id, {
+          progressPercent,
+          completedAt: progressPercent === 100 ? new Date() : null
+        });
+      }
+    }
+    
+    return newProgress;
+  }
+  
+  async updateUserLearningProgress(id: number, progress: Partial<UserLearningProgress>): Promise<UserLearningProgress> {
+    const existingProgress = this.userLearningProgress.get(id);
+    if (!existingProgress) {
+      throw new Error(`User learning progress with id ${id} not found`);
+    }
+    
+    const updatedProgress: UserLearningProgress = {
+      ...existingProgress,
+      ...progress
+    };
+    
+    this.userLearningProgress.set(id, updatedProgress);
+    
+    // Update progress percentage in enrollment if completed
+    if (progress.completedAt) {
+      const enrollment = await this.getUserEnrollmentByPathId(updatedProgress.userId, updatedProgress.pathId);
+      if (enrollment) {
+        const steps = await this.getLearningPathSteps(updatedProgress.pathId);
+        const completedSteps = await this.getUserLearningProgress(updatedProgress.userId, updatedProgress.pathId);
+        const completedCount = completedSteps.filter(s => s.completedAt).length;
+        const totalCount = steps.length;
+        
+        if (totalCount > 0) {
+          const progressPercent = Math.round((completedCount / totalCount) * 100);
+          
+          await this.updateUserLearningEnrollment(enrollment.id, {
+            progressPercent,
+            completedAt: progressPercent === 100 ? new Date() : null
+          });
+        }
+      }
+    }
+    
+    return updatedProgress;
+  }
+  
+  // Initialize learning paths
+  private initializeLearningPaths() {
+    // Create learning paths related to business development
+    const paths: InsertLearningPath[] = [
+      {
+        title: "Business Foundations",
+        description: "Learn the essentials of building a successful business from scratch",
+        category: "business",
+        skillLevel: "beginner",
+        estimatedHours: 12,
+        thumbnailUrl: "/images/learning/business-foundations.jpg",
+        tags: ["business", "entrepreneurship", "startup"],
+        authorId: 1,
+        requiredTier: "self-guided"
+      },
+      {
+        title: "Advanced Marketing Strategies",
+        description: "Master marketing techniques to grow your business and attract more customers",
+        category: "marketing",
+        skillLevel: "intermediate",
+        estimatedHours: 15,
+        thumbnailUrl: "/images/learning/marketing-strategies.jpg",
+        tags: ["marketing", "growth", "customer acquisition"],
+        authorId: 1,
+        requiredTier: "growth"
+      },
+      {
+        title: "Branding Masterclass",
+        description: "Develop a compelling brand identity that resonates with your audience",
+        category: "branding",
+        skillLevel: "intermediate",
+        estimatedHours: 10,
+        thumbnailUrl: "/images/learning/branding-masterclass.jpg",
+        tags: ["branding", "design", "identity"],
+        authorId: 1,
+        requiredTier: "growth"
+      },
+      {
+        title: "Financial Planning for Small Businesses",
+        description: "Learn how to manage finances, create projections, and secure funding",
+        category: "finance",
+        skillLevel: "intermediate",
+        estimatedHours: 14,
+        thumbnailUrl: "/images/learning/financial-planning.jpg",
+        tags: ["finance", "funding", "projections"],
+        authorId: 1,
+        requiredTier: "premium"
+      },
+      {
+        title: "Web Development for Entrepreneurs",
+        description: "Learn the basics of web development to create or improve your business website",
+        category: "technology",
+        skillLevel: "beginner",
+        estimatedHours: 20,
+        thumbnailUrl: "/images/learning/web-development.jpg",
+        tags: ["technology", "web", "coding"],
+        authorId: 1,
+        requiredTier: "growth"
+      }
+    ];
+    
+    // Create the paths
+    paths.forEach(async (path) => {
+      const createdPath = await this.createLearningPath(path);
+      
+      // For the Business Foundations path, create some steps
+      if (path.title === "Business Foundations") {
+        const steps: InsertLearningPathStep[] = [
+          {
+            pathId: createdPath.id,
+            title: "Understanding Market Research",
+            description: "Learn how to research your market and identify opportunities",
+            resourceId: 1, // Business Plan Template
+            stepOrder: 1,
+            estimatedMinutes: 60,
+            type: "article"
+          },
+          {
+            pathId: createdPath.id,
+            title: "Creating a Business Plan",
+            description: "Step-by-step guide to creating a comprehensive business plan",
+            resourceId: 1, // Business Plan Template
+            stepOrder: 2,
+            estimatedMinutes: 90,
+            type: "template"
+          },
+          {
+            pathId: createdPath.id,
+            title: "Business Structure and Legal Considerations",
+            description: "Understanding different business structures and legal requirements",
+            resourceId: 5, // Legal Guide for Startups
+            stepOrder: 3,
+            estimatedMinutes: 75,
+            type: "article"
+          },
+          {
+            pathId: createdPath.id,
+            title: "Funding Your Business",
+            description: "Exploring different funding options for your business",
+            resourceId: 4, // Financial Forecast Template
+            stepOrder: 4,
+            estimatedMinutes: 60,
+            type: "video"
+          },
+          {
+            pathId: createdPath.id,
+            title: "Setting Up Your Operations",
+            description: "Creating efficient processes for day-to-day operations",
+            resourceId: 13, // Operations Optimization Guide
+            stepOrder: 5,
+            estimatedMinutes: 90,
+            type: "article"
+          }
+        ];
+        
+        // Create the steps
+        steps.forEach(async (step) => {
+          await this.createLearningPathStep(step);
+        });
+      }
+      
+      // For the Advanced Marketing Strategies path, create some steps
+      else if (path.title === "Advanced Marketing Strategies") {
+        const steps: InsertLearningPathStep[] = [
+          {
+            pathId: createdPath.id,
+            title: "Defining Your Target Audience",
+            description: "Methods to identify and understand your ideal customer",
+            resourceId: 2, // Guide to Social Media Marketing
+            stepOrder: 1,
+            estimatedMinutes: 60,
+            type: "article"
+          },
+          {
+            pathId: createdPath.id,
+            title: "Creating a Content Strategy",
+            description: "Learn how to develop a content strategy that drives engagement",
+            resourceId: 7, // Content Strategy Template
+            stepOrder: 2,
+            estimatedMinutes: 75,
+            type: "template"
+          },
+          {
+            pathId: createdPath.id,
+            title: "Social Media Marketing",
+            description: "Leveraging social media platforms to reach your audience",
+            resourceId: 2, // Guide to Social Media Marketing
+            stepOrder: 3,
+            estimatedMinutes: 90,
+            type: "video"
+          },
+          {
+            pathId: createdPath.id,
+            title: "Email Marketing Fundamentals",
+            description: "Building and growing your email list and creating campaigns",
+            resourceId: 8, // Email Marketing Toolkit
+            stepOrder: 4,
+            estimatedMinutes: 60,
+            type: "article"
+          },
+          {
+            pathId: createdPath.id,
+            title: "Analyzing Marketing Performance",
+            description: "Using data to measure and improve marketing results",
+            resourceId: 15, // Analytics for Beginners
+            stepOrder: 5,
+            estimatedMinutes: 75,
+            type: "interactive"
+          }
+        ];
+        
+        // Create the steps
+        steps.forEach(async (step) => {
+          await this.createLearningPathStep(step);
+        });
+      }
+    });
   }
   
   // Initialize 30 areas for each constellation
