@@ -8,18 +8,20 @@ import { User, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-type AuthContextType = {
+type LoginData = Pick<InsertUser, "username" | "password">;
+
+// The Fast Refresh issue is related to how we export the context
+// Instead of directly exporting, we'll define it first and then export
+const AuthContext = createContext<{
   user: User | null;
   isLoading: boolean;
   error: Error | null;
   loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<User, Error, InsertUser>;
-};
+} | null>(null);
 
-type LoginData = Pick<InsertUser, "username" | "password">;
-
-export const AuthContext = createContext<AuthContextType | null>(null);
+export { AuthContext };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();

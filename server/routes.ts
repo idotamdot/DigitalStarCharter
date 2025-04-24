@@ -125,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/branding/me", requireAuth, async (req, res) => {
     try {
-      const businessProfile = await storage.getBusinessProfileByUserId(req.session.userId!);
+      const businessProfile = await storage.getBusinessProfileByUserId(req.user.id);
       
       if (!businessProfile) {
         return res.status(404).json({ message: "Business profile not found" });
@@ -154,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const businessProfile = await storage.getBusinessProfile(branding.businessId);
       
-      if (!businessProfile || businessProfile.userId !== req.session.userId) {
+      if (!businessProfile || businessProfile.userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to update this branding info" });
       }
       
