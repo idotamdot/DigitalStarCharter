@@ -163,10 +163,8 @@ const Navbar = () => {
             {filteredLinks
               .filter((link) => !link.href.startsWith("/#"))
               .map((link) => (
-                <Link key={link.href} href={link.href}>
-                  <a className="text-gray-300 hover:text-blue-400 px-3 py-2 text-sm font-medium">
-                    {link.text}
-                  </a>
+                <Link key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 px-3 py-2 text-sm font-medium">
+                  {link.text}
                 </Link>
               ))}
 
@@ -389,10 +387,8 @@ const Navbar = () => {
                   {filteredLinks
                     .filter((link) => !link.href.startsWith("/#"))
                     .map((link) => (
-                      <Link key={link.href} href={link.href}>
-                        <a className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium">
-                          {link.text}
-                        </a>
+                      <Link key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium">
+                        {link.text}
                       </Link>
                     ))}
 
