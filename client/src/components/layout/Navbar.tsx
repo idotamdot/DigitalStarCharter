@@ -37,6 +37,7 @@ const navLinks: NavLink[] = [
   { text: "About Us", href: "/#about" },
   { text: "Dashboard", href: "/dashboard", requiresAuth: true },
   { text: "Resources", href: "/resources", requiresAuth: true },
+  { text: "Resource Catalog", href: "/resource-catalog", requiresAuth: true },
   { text: "Constellations", href: "/constellations", requiresAuth: true },
 ];
 
@@ -108,8 +109,11 @@ const Navbar = () => {
         title: "Logout successful",
         description: "You have been logged out",
       });
-      // Redirect to home if on dashboard
-      if (location.startsWith("/dashboard") || location.startsWith("/resources")) {
+      // Redirect to home if on protected pages
+      if (location.startsWith("/dashboard") || 
+          location.startsWith("/resources") || 
+          location.startsWith("/resource-catalog") ||
+          location.startsWith("/constellations")) {
         window.location.href = "/";
       }
     } catch (error) {
