@@ -408,8 +408,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       let tier = undefined;
       
-      if (req.session.userId) {
-        const businessProfile = await storage.getBusinessProfileByUserId(req.session.userId);
+      if (req.isAuthenticated()) {
+        const businessProfile = await storage.getBusinessProfileByUserId(req.user.id);
         
         if (businessProfile) {
           const subscription = await storage.getSubscriptionByBusinessId(businessProfile.id);
@@ -447,8 +447,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!resource.isPublic) {
         let hasAccess = false;
         
-        if (req.session.userId) {
-          const businessProfile = await storage.getBusinessProfileByUserId(req.session.userId);
+        if (req.isAuthenticated()) {
+          const businessProfile = await storage.getBusinessProfileByUserId(req.user.id);
           
           if (businessProfile) {
             const subscription = await storage.getSubscriptionByBusinessId(businessProfile.id);
@@ -608,7 +608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is authorized
       const path = await storage.getLearningPath(step.pathId);
-      if (!path || path.authorId !== req.session.userId) {
+      if (!path || path.authorId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to update this step" });
       }
       
@@ -632,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is authorized
       const path = await storage.getLearningPath(step.pathId);
-      if (!path || path.authorId !== req.session.userId) {
+      if (!path || path.authorId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to delete this step" });
       }
       
@@ -648,7 +648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's enrollments
   app.get("/api/user/enrollments", requireAuth, async (req, res) => {
     try {
-      const enrollments = await storage.getUserLearningEnrollments(req.session.userId!);
+      const enrollments = await storage.getUserLearningEnrollments(req.user.id);
       
       // For each enrollment, get the associated learning path
       const enrichedEnrollments = await Promise.all(
@@ -679,13 +679,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user is already enrolled
-      const existingEnrollment = await storage.getUserEnrollmentByPathId(req.session.userId!, pathId);
+      const existingEnrollment = await storage.getUserEnrollmentByPathId(req.user.id, pathId);
       if (existingEnrollment) {
         return res.status(400).json({ message: "You are already enrolled in this learning path" });
       }
       
       const enrollmentInput = {
-        userId: req.session.userId!,
+        userId: req.user.id,
         pathId,
         isActive: true
       };
@@ -708,7 +708,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Enrollment not found" });
       }
       
-      if (enrollment.userId !== req.session.userId) {
+      if (enrollment.userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to update this enrollment" });
       }
       
@@ -725,7 +725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/learning-paths/:pathId/progress", requireAuth, async (req, res) => {
     try {
       const pathId = parseInt(req.params.pathId);
-      const progress = await storage.getUserLearningProgress(req.session.userId!, pathId);
+      const progress = await storage.getUserLearningProgress(req.user.id, pathId);
       
       // Get all steps to calculate overall progress
       const steps = await storage.getLearningPathSteps(pathId);
@@ -757,13 +757,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user is enrolled in this path
-      const enrollment = await storage.getUserEnrollmentByPathId(req.session.userId!, step.pathId);
+      const enrollment = await storage.getUserEnrollmentByPathId(req.user.id, step.pathId);
       if (!enrollment) {
         return res.status(400).json({ message: "You are not enrolled in this learning path" });
       }
       
       // Check if progress already exists
-      let progress = await storage.getUserProgressForStep(req.session.userId!, stepId);
+      let progress = await storage.getUserProgressForStep(req.user.id, stepId);
       
       if (progress) {
         // Update existing progress
@@ -774,7 +774,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Create new progress
         progress = await storage.createUserLearningProgress({
-          userId: req.session.userId!,
+          userId: req.user.id,
           pathId: step.pathId,
           stepId,
           notes: req.body.notes || null,
