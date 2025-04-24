@@ -26,7 +26,15 @@ import {
   ServiceOffering,
   InsertServiceOffering,
   Appointment,
-  InsertAppointment
+  InsertAppointment,
+  LearningPath,
+  InsertLearningPath,
+  LearningPathStep,
+  InsertLearningPathStep,
+  UserLearningEnrollment,
+  InsertUserLearningEnrollment,
+  UserLearningProgress,
+  InsertUserLearningProgress
 } from "@shared/schema";
 
 export interface IStorage {
@@ -113,6 +121,32 @@ export interface IStorage {
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: number, appointment: Partial<Appointment>): Promise<Appointment>;
   cancelAppointment(id: number): Promise<Appointment>;
+  
+  // Learning Path operations
+  getLearningPath(id: number): Promise<LearningPath | undefined>;
+  getAllLearningPaths(category?: string): Promise<LearningPath[]>;
+  createLearningPath(path: InsertLearningPath): Promise<LearningPath>;
+  updateLearningPath(id: number, path: Partial<LearningPath>): Promise<LearningPath>;
+  
+  // Learning Path Steps operations
+  getLearningPathStep(id: number): Promise<LearningPathStep | undefined>;
+  getLearningPathSteps(pathId: number): Promise<LearningPathStep[]>;
+  createLearningPathStep(step: InsertLearningPathStep): Promise<LearningPathStep>;
+  updateLearningPathStep(id: number, step: Partial<LearningPathStep>): Promise<LearningPathStep>;
+  deleteLearningPathStep(id: number): Promise<void>;
+  
+  // User Learning Enrollment operations
+  getUserLearningEnrollments(userId: number): Promise<UserLearningEnrollment[]>;
+  getUserLearningEnrollment(id: number): Promise<UserLearningEnrollment | undefined>;
+  getUserEnrollmentByPathId(userId: number, pathId: number): Promise<UserLearningEnrollment | undefined>;
+  createUserLearningEnrollment(enrollment: InsertUserLearningEnrollment): Promise<UserLearningEnrollment>;
+  updateUserLearningEnrollment(id: number, enrollment: Partial<UserLearningEnrollment>): Promise<UserLearningEnrollment>;
+  
+  // User Learning Progress operations
+  getUserLearningProgress(userId: number, pathId: number): Promise<UserLearningProgress[]>;
+  getUserProgressForStep(userId: number, stepId: number): Promise<UserLearningProgress | undefined>;
+  createUserLearningProgress(progress: InsertUserLearningProgress): Promise<UserLearningProgress>;
+  updateUserLearningProgress(id: number, progress: Partial<UserLearningProgress>): Promise<UserLearningProgress>;
 }
 
 export class MemStorage implements IStorage {
@@ -148,6 +182,18 @@ export class MemStorage implements IStorage {
   private availabilityId: number;
   private serviceOfferingId: number;
   private appointmentId: number;
+  
+  // Learning paths related IDs
+  private learningPathId: number;
+  private learningPathStepId: number;
+  private userLearningEnrollmentId: number;
+  private userLearningProgressId: number;
+  
+  // Learning paths related maps
+  private learningPaths: Map<number, LearningPath>;
+  private learningPathSteps: Map<number, LearningPathStep>;
+  private userLearningEnrollments: Map<number, UserLearningEnrollment>;
+  private userLearningProgress: Map<number, UserLearningProgress>;
   
   constructor() {
     this.users = new Map();

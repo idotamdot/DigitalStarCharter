@@ -331,3 +331,80 @@ export type ServiceOffering = typeof serviceOfferings.$inferSelect;
 
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 export type Appointment = typeof appointments.$inferSelect;
+
+// Learning Path Schema
+export const learningPaths = pgTable("learning_paths", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  difficultyLevel: text("difficulty_level").notNull(), // "beginner", "intermediate", "advanced"
+  estimatedHours: integer("estimated_hours").notNull(),
+  category: text("category").notNull(), // Matches resource categories
+  coverImageUrl: text("cover_image_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const learningPathSteps = pgTable("learning_path_steps", {
+  id: serial("id").primaryKey(),
+  pathId: integer("path_id").references(() => learningPaths.id, { onDelete: "cascade" }).notNull(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  stepOrder: integer("step_order").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  isRequired: boolean("is_required").default(true).notNull(),
+});
+
+export const userLearningProgress = pgTable("user_learning_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  pathId: integer("path_id").references(() => learningPaths.id, { onDelete: "cascade" }).notNull(),
+  stepId: integer("step_id").references(() => learningPathSteps.id, { onDelete: "cascade" }).notNull(),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  resourceRating: integer("resource_rating"), // 1-5 star rating
+});
+
+export const userLearningEnrollments = pgTable("user_learning_enrollments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  pathId: integer("path_id").references(() => learningPaths.id, { onDelete: "cascade" }).notNull(),
+  enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  isActive: boolean("is_active").default(true).notNull(),
+  progressPercent: integer("progress_percent").default(0).notNull(),
+  lastAccessedAt: timestamp("last_accessed_at").defaultNow().notNull(),
+});
+
+export const insertLearningPathSchema = createInsertSchema(learningPaths).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertLearningPathStepSchema = createInsertSchema(learningPathSteps).omit({
+  id: true,
+});
+
+export const insertUserLearningProgressSchema = createInsertSchema(userLearningProgress).omit({
+  id: true,
+});
+
+export const insertUserLearningEnrollmentSchema = createInsertSchema(userLearningEnrollments).omit({
+  id: true,
+  enrolledAt: true,
+  progressPercent: true,
+  lastAccessedAt: true
+});
+
+export type InsertLearningPath = z.infer<typeof insertLearningPathSchema>;
+export type LearningPath = typeof learningPaths.$inferSelect;
+
+export type InsertLearningPathStep = z.infer<typeof insertLearningPathStepSchema>;
+export type LearningPathStep = typeof learningPathSteps.$inferSelect;
+
+export type InsertUserLearningProgress = z.infer<typeof insertUserLearningProgressSchema>;
+export type UserLearningProgress = typeof userLearningProgress.$inferSelect;
+
+export type InsertUserLearningEnrollment = z.infer<typeof insertUserLearningEnrollmentSchema>;
+export type UserLearningEnrollment = typeof userLearningEnrollments.$inferSelect;
