@@ -57,6 +57,7 @@ function Router() {
       </Route>
       <Route path="/mission" component={Mission} />
       <Route path="/join" component={JoinConstellation} />
+      <Route path="/constellation-financing" component={ConstellationFinancing} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StarButton } from "@/components/ui/star-button";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -224,13 +225,24 @@ const ServiceSelection = () => {
             </p>
           </div>
 
-          <div className="text-center mb-12">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="inline-flex">
+          <div className="flex flex-col items-center mb-12">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="inline-flex mb-6">
               <TabsList className="bg-gray-800/50 backdrop-blur-sm">
                 <TabsTrigger value="monthly" className="data-[state=active]:bg-blue-900/50">Monthly</TabsTrigger>
                 <TabsTrigger value="annual" className="data-[state=active]:bg-blue-900/50">Annual (Save 20%)</TabsTrigger>
               </TabsList>
             </Tabs>
+            
+            <div className="mt-4 flex justify-center">
+              <StarButton
+                href="/constellation-financing"
+                color="gold"
+                size="md"
+                className="shadow-lg hover:shadow-xl transition-shadow"
+              >
+                More Details
+              </StarButton>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
