@@ -17,6 +17,7 @@ import AreaDetail from "@/pages/AreaDetail";
 import GuidingStarForum, { TopicDetail } from "@/pages/GuidingStarForum";
 import Mission from "@/pages/Mission";
 import JoinConstellation from "@/pages/JoinConstellation";
+import ConstellationFinancing from "@/pages/ConstellationFinancing";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "./lib/queryClient";

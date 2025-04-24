@@ -2,6 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-twinkle {
+  animation: twinkle 2s infinite;
+}
+
+@keyframes sparkle {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 1.5s ease-in-out forwards;
+}
+
 /* Animation for stars background */
 @keyframes twinkle {
   0% { opacity: 0.2; }
