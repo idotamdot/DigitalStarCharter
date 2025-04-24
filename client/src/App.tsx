@@ -20,50 +20,45 @@ import GuidingStarForum, { TopicDetail } from "@/pages/GuidingStarForum";
 import Mission from "@/pages/Mission";
 import JoinConstellation from "@/pages/JoinConstellation";
 import ConstellationFinancing from "@/pages/ConstellationFinancing";
+import LearningPaths from "@/pages/LearningPaths";
+import LearningPathDetail from "@/pages/LearningPathDetail";
+import AuthPage from "@/pages/auth-page";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "./lib/queryClient";
 
 function Router() {
-  const { data: user } = useQuery({
-    queryKey: ["/api/users/me"],
-    retry: false,
-    throwOnError: false,
-  });
-
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/business-wizard" component={BusinessWizard} />
-      <Route path="/brand-questionnaire" component={BrandQuestionnaire} />
-      <Route path="/social-media-plan" component={SocialMediaPlan} />
-      <Route path="/service-selection" component={ServiceSelection} />
+      <Route path="/auth" component={AuthPage} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/business-wizard" component={BusinessWizard} />
+      <ProtectedRoute path="/brand-questionnaire" component={BrandQuestionnaire} />
+      <ProtectedRoute path="/social-media-plan" component={SocialMediaPlan} />
+      <ProtectedRoute path="/service-selection" component={ServiceSelection} />
       <Route path="/resource-catalog" component={ResourceCatalog} />
       <Route path="/resources" component={ResourceLibrary} />
       <Route path="/resources/:id">
         {(params) => <ResourceDetail params={params} />}
+      </Route>
+      <Route path="/learning-paths" component={LearningPaths} />
+      <Route path="/learning-paths/:id">
+        {(params) => <LearningPathDetail />}
       </Route>
       <Route path="/constellations">
         <div className="container mx-auto py-6">
           <ConstellationMap />
         </div>
       </Route>
-      <Route path="/constellations/:id">
-        {(params) => <ConstellationAreas />}
-      </Route>
-      <Route path="/areas/:id">
-        {(params) => <AreaDetail />}
-      </Route>
-      <Route path="/forum">
-        <GuidingStarForum />
-      </Route>
-      <Route path="/forum/topics/:id">
-        {(params) => <TopicDetail />}
-      </Route>
+      <ProtectedRoute path="/constellations/:id" component={ConstellationAreas} />
+      <ProtectedRoute path="/areas/:id" component={AreaDetail} />
+      <ProtectedRoute path="/forum" component={GuidingStarForum} />
+      <ProtectedRoute path="/forum/topics/:id" component={TopicDetail} />
       <Route path="/mission" component={Mission} />
       <Route path="/join" component={JoinConstellation} />
-      <Route path="/constellation-financing" component={ConstellationFinancing} />
+      <ProtectedRoute path="/constellation-financing" component={ConstellationFinancing} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -72,10 +67,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
