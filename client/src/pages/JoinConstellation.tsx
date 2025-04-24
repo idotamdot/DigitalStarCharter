@@ -343,14 +343,14 @@ export default function JoinConstellation() {
                               </Badge>
                             )}
                           </CardTitle>
-                          <CardDescription className="text-gray-400">
+                          <CardDescription className="text-gray-200">
                             {role.description}
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="p-4 pt-2">
                           <div className="mt-2">
                             <p className="text-sm font-medium mb-1">Requirements:</p>
-                            <ul className="text-sm text-gray-400 list-disc list-inside">
+                            <ul className="text-sm text-gray-200 list-disc list-inside">
                               {role.requirements.map((req, index) => (
                                 <li key={index}>{req}</li>
                               ))}
@@ -440,7 +440,7 @@ export default function JoinConstellation() {
                                 ))}
                               </SelectContent>
                             </Select>
-                            <FormDescription className="text-gray-400">
+                            <FormDescription className="text-gray-200">
                               Roles marked with ★ are priority roles for the North Star Council.
                             </FormDescription>
                             <FormMessage />
@@ -505,7 +505,7 @@ export default function JoinConstellation() {
                                 className="bg-gray-900/60 border-gray-700" 
                               />
                             </FormControl>
-                            <FormDescription className="text-gray-400">
+                            <FormDescription className="text-gray-200">
                               GitHub, personal website, or any online portfolio
                             </FormDescription>
                             <FormMessage />
@@ -553,7 +553,7 @@ export default function JoinConstellation() {
                   <StarIcon className="h-8 w-8 text-blue-400" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">Equal Share</h3>
-                <p className="text-gray-400">Every star in our constellation receives an equal share of profits for completed work.</p>
+                <p className="text-gray-200">Every star in our constellation receives an equal share of profits for completed work.</p>
               </div>
               
               <div className="text-center">
@@ -561,7 +561,7 @@ export default function JoinConstellation() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-purple-400"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V6"></path></svg>
                 </div>
                 <h3 className="text-xl font-bold mb-2">Flexible Roles</h3>
-                <p className="text-gray-400">Change your role anytime as your interests and skills evolve.</p>
+                <p className="text-gray-200">Change your role anytime as your interests and skills evolve.</p>
               </div>
               
               <div className="text-center">
@@ -569,7 +569,7 @@ export default function JoinConstellation() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-pink-400"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path><path d="M15 9a6 6 0 0 0 6 6"></path></svg>
                 </div>
                 <h3 className="text-xl font-bold mb-2">Remote First</h3>
-                <p className="text-gray-400">Work from anywhere in the world as part of our global team.</p>
+                <p className="text-gray-200">Work from anywhere in the world as part of our global team.</p>
               </div>
             </div>
           </div>
