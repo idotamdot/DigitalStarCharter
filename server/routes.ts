@@ -14,114 +14,32 @@ import {
   insertUserLearningEnrollmentSchema,
   insertUserLearningProgressSchema
 } from "@shared/schema";
-import session from "express-session";
-import MemoryStore from "memorystore";
+import { setupAuth, requireAuth } from "./auth";
 import { registerGovernanceRoutes } from "./governance-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup session store
-  const SessionStore = MemoryStore(session);
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || "digital-presence-secret",
-      resave: false,
-      saveUninitialized: false,
-      cookie: { secure: process.env.NODE_ENV === "production", maxAge: 86400000 }, // 1 day
-      store: new SessionStore({ checkPeriod: 86400000 })
-    })
-  );
+  // Setup authentication
+  setupAuth(app);
 
-  // Authentication middleware
-  const requireAuth = (req: Request, res: Response, next: Function) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+  // Map legacy routes to the new auth routes for backward compatibility
+  app.post("/api/users/register", (req, res, next) => {
+    req.url = "/api/register";
     next();
-  };
-
-  // User routes
-  app.post("/api/users/register", async (req, res) => {
-    try {
-      const userInput = insertUserSchema.parse(req.body);
-      
-      // Check if user already exists
-      const existingByUsername = await storage.getUserByUsername(userInput.username);
-      if (existingByUsername) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-      
-      const existingByEmail = await storage.getUserByEmail(userInput.email);
-      if (existingByEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-      
-      const user = await storage.createUser(userInput);
-      
-      // Remove password before sending response
-      const { password, ...userWithoutPassword } = user;
-      
-      // Set session
-      req.session.userId = user.id;
-      
-      res.status(201).json(userWithoutPassword);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: error.errors });
-      }
-      res.status(500).json({ message: "Error creating user" });
-    }
   });
   
-  app.post("/api/users/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-      
-      const user = await storage.getUserByUsername(username);
-      
-      if (!user || user.password !== password) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      
-      // Set session
-      req.session.userId = user.id;
-      
-      // Remove password before sending response
-      const { password: _, ...userWithoutPassword } = user;
-      
-      res.json(userWithoutPassword);
-    } catch (error) {
-      res.status(500).json({ message: "Error logging in" });
-    }
+  app.post("/api/users/login", (req, res, next) => {
+    req.url = "/api/login";
+    next();
   });
   
-  app.post("/api/users/logout", (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Error logging out" });
-      }
-      res.json({ message: "Logged out successfully" });
-    });
+  app.post("/api/users/logout", (req, res, next) => {
+    req.url = "/api/logout";
+    next();
   });
   
-  app.get("/api/users/me", requireAuth, async (req, res) => {
-    try {
-      const user = await storage.getUser(req.session.userId!);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Remove password before sending response
-      const { password, ...userWithoutPassword } = user;
-      
-      res.json(userWithoutPassword);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching user" });
-    }
+  app.get("/api/users/me", (req, res, next) => {
+    req.url = "/api/user";
+    next();
   });
 
   // Business profile routes
@@ -129,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const profileInput = {
         ...req.body,
-        userId: req.session.userId
+        userId: req.user.id
       };
       
       const validatedInput = insertBusinessProfileSchema.parse(profileInput);
@@ -146,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/business-profiles/me", requireAuth, async (req, res) => {
     try {
-      const profile = await storage.getBusinessProfileByUserId(req.session.userId!);
+      const profile = await storage.getBusinessProfileByUserId(req.user.id);
       
       if (!profile) {
         return res.status(404).json({ message: "Business profile not found" });
@@ -167,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Business profile not found" });
       }
       
-      if (profile.userId !== req.session.userId) {
+      if (profile.userId !== req.user.id) {
         return res.status(403).json({ message: "Not authorized to update this profile" });
       }
       
@@ -182,7 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Branding routes
   app.post("/api/branding", requireAuth, async (req, res) => {
     try {
-      const businessProfile = await storage.getBusinessProfileByUserId(req.session.userId!);
+      const businessProfile = await storage.getBusinessProfileByUserId(req.user.id);
       
       if (!businessProfile) {
         return res.status(404).json({ message: "Business profile not found" });
