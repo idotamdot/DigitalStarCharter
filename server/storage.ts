@@ -85,6 +85,7 @@ export interface IStorage {
   
   // Area operations
   getArea(id: number): Promise<Area | undefined>;
+  getAllAreas(): Promise<Area[]>;
   getAreasByConstellation(constellationId: number): Promise<Area[]>;
   createArea(area: InsertArea): Promise<Area>;
   updateArea(id: number, area: Partial<Area>): Promise<Area>;
@@ -828,6 +829,10 @@ export class MemStorage implements IStorage {
   // Area operations
   async getArea(id: number): Promise<Area | undefined> {
     return this.areas.get(id);
+  }
+  
+  async getAllAreas(): Promise<Area[]> {
+    return Array.from(this.areas.values());
   }
   
   async getAreasByConstellation(constellationId: number): Promise<Area[]> {

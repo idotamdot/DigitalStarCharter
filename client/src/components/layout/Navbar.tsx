@@ -37,6 +37,7 @@ const navLinks: NavLink[] = [
   { text: "Join", href: "/join" },
   { text: "About Us", href: "/#about" },
   { text: "Dashboard", href: "/dashboard", requiresAuth: true },
+  { text: "Governance", href: "/governance", requiresAuth: true },
   { text: "Resources", href: "/resources", requiresAuth: true },
   { text: "Resource Catalog", href: "/resource-catalog", requiresAuth: true },
   { text: "Learning Paths", href: "/learning-paths" },
