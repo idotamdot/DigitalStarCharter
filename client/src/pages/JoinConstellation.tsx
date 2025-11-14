@@ -14,172 +14,26 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
-import { Label } from "@/components/ui/label";
-import { CheckIcon, Sparkles, Star, StarIcon, Stars } from "lucide-react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { CheckIcon, Sparkles, Star, StarIcon, Stars, ArrowRight } from "lucide-react";
+import { GOVERNANCE_ROLES } from "@shared/governance";
 
-// Define roles data structure
-const roles = [
-  {
-    id: "full-stack-developer",
-    title: "Full Stack Developer",
-    description: "Build and maintain complete web applications from front-end to back-end",
-    requirements: ["JavaScript/TypeScript", "React", "Node.js", "Database knowledge"],
+// Convert governance roles to the format expected by this component
+const roles = GOVERNANCE_ROLES
+  .filter(role => role.id !== "member") // Exclude basic member role from application
+  .map(role => ({
+    id: role.id,
+    title: role.title,
+    description: role.description,
+    requirements: role.requirements,
     badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: true,
-    councilQuota: 15,
-  },
-  {
-    id: "ux-designer",
-    title: "UX Designer",
-    description: "Create intuitive and beautiful user experiences for web and mobile applications",
-    requirements: ["UI design", "User research", "Wireframing", "Prototyping"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: true,
-    councilQuota: 10,
-  },
-  {
-    id: "backend-developer",
-    title: "Backend Developer",
-    description: "Design, build, and maintain server-side applications and databases",
-    requirements: ["API development", "Database management", "Security", "Performance optimization"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: false,
-  },
-  {
-    id: "frontend-developer",
-    title: "Frontend Developer",
-    description: "Create responsive and interactive user interfaces for web applications",
-    requirements: ["HTML/CSS", "JavaScript", "React", "Responsive design"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: false,
-  },
-  {
-    id: "devops-engineer",
-    title: "DevOps Engineer",
-    description: "Manage deployment infrastructure and automate development workflows",
-    requirements: ["CI/CD", "Cloud platforms", "Docker/Kubernetes", "Infrastructure as code"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: false,
-  },
-  {
-    id: "project-manager",
-    title: "Project Manager",
-    description: "Coordinate teams and ensure projects are completed efficiently",
-    requirements: ["Agile methodologies", "Team coordination", "Timeline management", "Stakeholder communication"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: false,
-  },
-  {
-    id: "content-writer",
-    title: "Content Writer",
-    description: "Create compelling content for websites, blogs, and marketing materials",
-    requirements: ["Copywriting", "SEO knowledge", "Content strategy", "Research skills"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: false,
-  },
-  {
-    id: "qa-tester",
-    title: "QA Tester",
-    description: "Test applications to ensure they meet quality standards",
-    requirements: ["Manual testing", "Automated testing", "Bug reporting", "User acceptance testing"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: false,
-  },
-  {
-    id: "data-scientist",
-    title: "Data Scientist",
-    description: "Analyze data and build models to extract insights",
-    requirements: ["Python", "Machine learning", "Data visualization", "Statistical analysis"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: false,
-  },
-  {
-    id: "security-specialist",
-    title: "Security Specialist",
-    description: "Ensure applications and infrastructure are secure from threats",
-    requirements: ["Penetration testing", "Security audits", "Authentication systems", "Compliance"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: false,
-  },
-  {
-    id: "developer",
-    title: "Developer",
-    description: "General programming and development tasks",
-    requirements: ["Programming fundamentals", "Problem solving", "Version control", "Testing"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: true,
-    councilQuota: 5,
-  },
-  {
-    id: "other",
-    title: "Other Role",
-    description: "Specify your role if it's not listed above",
-    requirements: ["Relevant experience", "Portfolio or work samples"],
-    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: false,
-  },
-];
-
-// Form schema for registration
-const formSchema = z.object({
-  fullName: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  primaryRole: z.string().min(1, "Please select a primary role"),
-  secondaryRoles: z.array(z.string()).optional(),
-  yearsExperience: z.string().min(1, "Please select your experience level"),
-  skills: z.string().min(10, "Please provide more details about your skills"),
-  portfolioUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
-  additionalInfo: z.string().optional(),
-});
+    isPriorityForCouncil: role.level === "council-member" || role.votingRights,
+    councilQuota: role.id === "guiding-star" ? 7 : role.id === "area-leader" ? 210 : 15, // Rough estimates
+  }));
 
 export default function JoinConstellation() {
   const [selectedTab, setSelectedTab] = useState("overview");
-  const [selectedRole, setSelectedRole] = useState("");
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      fullName: "",
-      email: "",
-      primaryRole: "",
-      secondaryRoles: [],
-      yearsExperience: "",
-      skills: "",
-      portfolioUrl: "",
-      additionalInfo: "",
-    },
-  });
-
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // Here we would normally submit to an API
-    alert("Application submitted! We'll be in touch soon.");
-  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-gray-900 to-blue-950">
@@ -222,10 +76,9 @@ export default function JoinConstellation() {
           </div>
 
           <Tabs defaultValue="overview" onValueChange={setSelectedTab} className="mb-12">
-            <TabsList className="grid grid-cols-3 max-w-md mx-auto bg-black/20">
+            <TabsList className="grid grid-cols-2 max-w-md mx-auto bg-black/20">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="roles">Roles</TabsTrigger>
-              <TabsTrigger value="apply">Apply</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="mt-6">
@@ -309,11 +162,10 @@ export default function JoinConstellation() {
                   </div>
 
                   <div className="flex justify-center pt-4">
-                    <Button 
-                      onClick={() => setSelectedTab("apply")}
-                      className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-2"
-                    >
-                      Apply Now
+                    <Button asChild className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-2">
+                      <Link href="/onboarding">
+                        Apply Now <ArrowRight className="w-4 h-4 ml-2" />
+                      </Link>
                     </Button>
                   </div>
                 </CardContent>
@@ -331,8 +183,7 @@ export default function JoinConstellation() {
                     {roles.map((role) => (
                       <Card 
                         key={role.id} 
-                        className={`bg-black/30 border border-blue-900/30 cursor-pointer transition-all duration-300 hover:bg-black/50 hover:border-blue-500/50 ${selectedRole === role.id ? 'ring-2 ring-blue-500' : ''}`}
-                        onClick={() => setSelectedRole(role.id)}
+                        className="bg-black/30 border border-blue-900/30 transition-all duration-300 hover:bg-black/50 hover:border-blue-500/50"
                       >
                         <CardHeader className="p-4 pb-2">
                           <CardTitle className="text-lg text-white flex items-center justify-between">
@@ -370,180 +221,16 @@ export default function JoinConstellation() {
                   </div>
 
                   <div className="flex justify-center mt-8">
-                    <Button 
-                      onClick={() => setSelectedTab("apply")}
-                      className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-2"
-                    >
-                      Apply for a Role
+                    <Button asChild className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-2">
+                      <Link href="/onboarding">
+                        Apply for a Role <ArrowRight className="w-4 h-4 ml-2" />
+                      </Link>
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="apply" className="mt-6">
-              <Card className="bg-black/40 backdrop-blur-md border-blue-900/50 shadow-xl text-white">
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-violet-600/10 to-blue-600/10 z-0"></div>
-                
-                <CardContent className="relative z-10 p-6 md:p-8">
-                  <h2 className="text-2xl font-bold mb-6 text-white">Application Form</h2>
-                  
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="fullName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Full Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Jane Doe" {...field} className="bg-gray-900/60 border-gray-700" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <Input placeholder="you@example.com" type="email" {...field} className="bg-gray-900/60 border-gray-700" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name="primaryRole"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Primary Role</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="bg-gray-900/60 border-gray-700">
-                                  <SelectValue placeholder="Select your primary role" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="bg-gray-900 border-gray-700">
-                                {roles.map((role) => (
-                                  <SelectItem key={role.id} value={role.id}>
-                                    {role.title} {role.isPriorityForCouncil && "★"}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription className="text-gray-200">
-                              Roles marked with ★ are priority roles for the North Star Council.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="yearsExperience"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Years of Experience</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="bg-gray-900/60 border-gray-700">
-                                  <SelectValue placeholder="Select your experience level" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="bg-gray-900 border-gray-700">
-                                <SelectItem value="0-1">Less than 1 year</SelectItem>
-                                <SelectItem value="1-3">1-3 years</SelectItem>
-                                <SelectItem value="3-5">3-5 years</SelectItem>
-                                <SelectItem value="5-10">5-10 years</SelectItem>
-                                <SelectItem value="10+">10+ years</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="skills"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Skills & Experience</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Describe your skills, tools you're familiar with, and relevant work experience..." 
-                                className="bg-gray-900/60 border-gray-700 min-h-[120px]"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="portfolioUrl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Portfolio URL (Optional)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="https://your-portfolio.com" 
-                                type="url" 
-                                {...field} 
-                                className="bg-gray-900/60 border-gray-700" 
-                              />
-                            </FormControl>
-                            <FormDescription className="text-gray-200">
-                              GitHub, personal website, or any online portfolio
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="additionalInfo"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Additional Information (Optional)</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Any other details you'd like to share..." 
-                                className="bg-gray-900/60 border-gray-700"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="pt-4">
-                        <Button 
-                          type="submit"
-                          className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
-                        >
-                          Submit Application
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </TabsContent>
           </Tabs>
 
           <div className="mt-12 bg-black/40 backdrop-blur-md border border-blue-900/50 rounded-lg p-6 text-white">
