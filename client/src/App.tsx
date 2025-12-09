@@ -24,8 +24,6 @@ import ConstellationFinancing from "@/pages/ConstellationFinancing";
 import LearningPaths from "@/pages/LearningPaths";
 import LearningPathDetail from "@/pages/LearningPathDetail";
 import AuthPage from "@/pages/auth-page";
-import GovernanceDashboard from "@/pages/GovernanceDashboard";
-import OnboardingWorkflow from "@/pages/OnboardingWorkflow";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { useState, useEffect } from "react";
@@ -37,9 +35,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/join" component={JoinConstellation} />
-      <Route path="/onboarding" component={OnboardingWorkflow} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
-      <ProtectedRoute path="/governance" component={GovernanceDashboard} />
       <ProtectedRoute path="/business-wizard" component={BusinessWizard} />
       <ProtectedRoute path="/brand-questionnaire" component={BrandQuestionnaire} />
       <ProtectedRoute path="/social-media-plan" component={SocialMediaPlan} />

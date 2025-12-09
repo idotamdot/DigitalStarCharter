@@ -17,20 +17,45 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckIcon, Sparkles, Star, StarIcon, Stars, ArrowRight } from "lucide-react";
-import { GOVERNANCE_ROLES } from "@shared/governance";
 
-// Convert governance roles to the format expected by this component
-const roles = GOVERNANCE_ROLES
-  .filter(role => role.id !== "member") // Exclude basic member role from application
-  .map(role => ({
-    id: role.id,
-    title: role.title,
-    description: role.description,
-    requirements: role.requirements,
+const roles = [
+  {
+    id: "full-stack",
+    title: "Full Stack Developer",
+    description: "Build and maintain all aspects of the platform.",
+    requirements: ["5+ years of experience", "Expert in React and Node.js"],
     badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
-    isPriorityForCouncil: role.level === "council-member" || role.votingRights,
-    councilQuota: role.id === "guiding-star" ? 7 : role.id === "area-leader" ? 210 : 15, // Rough estimates
-  }));
+    isPriorityForCouncil: true,
+    councilQuota: 15,
+  },
+  {
+    id: "ux-designer",
+    title: "UX Designer",
+    description: "Design intuitive and user-friendly experiences.",
+    requirements: ["3+ years of experience", "Proficient in Figma and Sketch"],
+    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
+    isPriorityForCouncil: true,
+    councilQuota: 10,
+  },
+  {
+    id: "dev-ops",
+    title: "DevOps Engineer",
+    description: "Manage our infrastructure and deployment pipelines.",
+    requirements: ["4+ years of experience", "Expert in AWS and Kubernetes"],
+    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
+    isPriorityForCouncil: false,
+    councilQuota: 0,
+  },
+    {
+    id: "developer",
+    title: "Developer",
+    description: "Develop new features and fix bugs.",
+    requirements: ["2+ years of experience", "Proficient in a modern programming language"],
+    badges: ["Novice", "Intermediate", "Advanced", "Expert", "Master"],
+    isPriorityForCouncil: true,
+    councilQuota: 5,
+  },
+];
 
 export default function JoinConstellation() {
   const [selectedTab, setSelectedTab] = useState("overview");
