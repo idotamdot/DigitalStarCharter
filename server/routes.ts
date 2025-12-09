@@ -44,6 +44,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
+  app.patch("/api/users/me/accessibility", requireAuth, async (req, res) => {
+    try {
+      const { accessibility_settings } = req.body;
+      const updatedUser = await storage.updateUser(req.user.id, {
+        accessibility_settings,
+      });
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: "Error updating accessibility settings" });
+    }
+  });
+
   // Business profile routes
   app.post("/api/business-profiles", requireAuth, async (req, res) => {
     try {

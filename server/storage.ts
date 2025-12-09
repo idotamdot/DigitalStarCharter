@@ -295,6 +295,7 @@ export class MemStorage implements IStorage {
       invitedBy: insertUser.invitedBy || null,
       approvedBy: null,
       characterEvaluation: insertUser.characterEvaluation || null,
+      accessibility_settings: {},
     };
     this.users.set(id, user);
     return user;
