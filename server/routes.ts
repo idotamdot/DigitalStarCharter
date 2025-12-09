@@ -18,7 +18,6 @@ import {
   insertAppointmentSchema
 } from "@shared/schema";
 import { setupAuth, requireAuth } from "./auth";
-import { registerGovernanceRoutes } from "./governance-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -870,9 +869,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error cancelling appointment" });
     }
   });
-
-  // Register governance routes (areas, forums, etc.)
-  registerGovernanceRoutes(app);
 
   // Learning Paths routes
   // Get all learning paths (optionally filtered by category)
