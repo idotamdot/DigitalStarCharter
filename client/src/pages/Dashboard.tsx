@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ProgressTracker from "@/components/dashboard/ProgressTracker";
 import ActionItems from "@/components/dashboard/ActionItems";
+import AccessibilityMenu from "@/components/dashboard/AccessibilityMenu";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -201,6 +202,10 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <ProgressTracker businessProfile={businessProfile} />
             <ActionItems businessProfile={businessProfile} />
+          </div>
+
+          <div className="mt-8">
+            <AccessibilityMenu />
           </div>
         </div>
       </main>

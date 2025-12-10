@@ -26,6 +26,7 @@ export const users = pgTable("users", {
   invitedBy: integer("invited_by"), // Who invited this member
   approvedBy: jsonb("approved_by"), // Array of user IDs who approved this member
   characterEvaluation: text("character_evaluation"), // Notes from character evaluation
+  accessibility_settings: jsonb("accessibility_settings").default({}).notNull(), // User accessibility preferences
 });
 
 // Business profiles for users
