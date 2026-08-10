@@ -10,9 +10,14 @@ if (existsSync(".env.local")) {
   loadEnvFile(".env");
 }
 
-const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
-if (!connectionString) {
+const rawConnectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+if (!rawConnectionString) {
   throw new Error("NEON_DATABASE_URL or DATABASE_URL must be set in .env.local, .env, or the process environment");
+}
+
+const connectionString = rawConnectionString.trim().replace(/^postgres:\/\//i, "postgresql://");
+if (!connectionString.startsWith("postgresql://")) {
+  throw new Error("Neon database URL must begin with postgresql:// or postgres://");
 }
 
 const sql = neon(connectionString);
