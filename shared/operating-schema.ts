@@ -6,7 +6,6 @@ import { members } from "./identity-schema";
 export type OperatingDomain = "people" | "work" | "finance" | "quality" | "growth" | "governance";
 export type RoleAssignmentStatus = "active" | "paused" | "ended";
 export type WorkOrderStatus = "planned" | "ready" | "in_progress" | "blocked" | "human_review" | "completed" | "cancelled";
-export type LedgerEntryType = "income" | "expense" | "reserve" | "distribution" | "adjustment";
 export type DistributionStatus = "draft" | "human_review" | "approved" | "paid" | "rejected";
 export type GrowthPlanStatus = "draft" | "human_review" | "approved" | "rejected";
 export type AiDecisionStatus = "drafted" | "human_review" | "approved" | "modified" | "rejected" | "executed";
@@ -57,7 +56,7 @@ export const workOrders = pgTable("work_orders", {
   description: text("description").notNull(),
   revenueType: text("revenue_type").default("direct").notNull(),
   expectedRevenueCents: integer("expected_revenue_cents").default(0).notNull(),
-  actualRevenueCents: integer("actual_revenue_cents").default(0).notNull(),
+  reportedRevenueCents: integer("reported_revenue_cents").default(0).notNull(),
   assignedMemberId: integer("assigned_member_id").references(() => members.id, { onDelete: "set null" }),
   assignedRoleId: integer("assigned_role_id").references(() => charterRoles.id, { onDelete: "set null" }),
   createdByMemberId: integer("created_by_member_id").references(() => members.id, { onDelete: "set null" }),
@@ -65,19 +64,6 @@ export const workOrders = pgTable("work_orders", {
   dueAt: timestamp("due_at"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const ledgerEntries = pgTable("charter_ledger_entries", {
-  id: serial("id").primaryKey(),
-  occurredAt: timestamp("occurred_at").defaultNow().notNull(),
-  type: text("type").$type<LedgerEntryType>().notNull(),
-  category: text("category").notNull(),
-  amountCents: integer("amount_cents").notNull(),
-  description: text("description").notNull(),
-  workOrderId: integer("work_order_id").references(() => workOrders.id, { onDelete: "set null" }),
-  recordedByMemberId: integer("recorded_by_member_id").references(() => members.id, { onDelete: "set null" }),
-  source: text("source").default("manual").notNull(),
-  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}).notNull(),
 });
 
 export const distributionPeriods = pgTable("distribution_periods", {
@@ -159,7 +145,6 @@ export const authorityAuditLog = pgTable("authority_audit_log", {
 export const insertCharterRoleSchema = createInsertSchema(charterRoles).omit({ id: true, createdAt: true });
 export const insertRoleAssignmentSchema = createInsertSchema(roleAssignments).omit({ id: true, assignedAt: true });
 export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({ id: true, createdAt: true, completedAt: true });
-export const insertLedgerEntrySchema = createInsertSchema(ledgerEntries).omit({ id: true, occurredAt: true });
 export const insertDistributionPeriodSchema = createInsertSchema(distributionPeriods).omit({ id: true, approvedAt: true, createdAt: true });
 export const insertGrowthPlanSchema = createInsertSchema(growthPlans).omit({ id: true, safeToAdd: true, analysis: true, approvedAt: true, createdAt: true });
 export const insertAiDecisionSchema = createInsertSchema(aiDecisions).omit({ id: true, reviewedAt: true, executedAt: true, createdAt: true });
@@ -167,7 +152,6 @@ export const insertAiDecisionSchema = createInsertSchema(aiDecisions).omit({ id:
 export type CharterRole = typeof charterRoles.$inferSelect;
 export type RoleAssignment = typeof roleAssignments.$inferSelect;
 export type WorkOrder = typeof workOrders.$inferSelect;
-export type LedgerEntry = typeof ledgerEntries.$inferSelect;
 export type DistributionPeriod = typeof distributionPeriods.$inferSelect;
 export type MemberDistribution = typeof memberDistributions.$inferSelect;
 export type GrowthPlan = typeof growthPlans.$inferSelect;
@@ -177,7 +161,6 @@ export type AuthorityAuditEntry = typeof authorityAuditLog.$inferSelect;
 export type InsertCharterRole = z.infer<typeof insertCharterRoleSchema>;
 export type InsertRoleAssignment = z.infer<typeof insertRoleAssignmentSchema>;
 export type InsertWorkOrder = z.infer<typeof insertWorkOrderSchema>;
-export type InsertLedgerEntry = z.infer<typeof insertLedgerEntrySchema>;
 export type InsertDistributionPeriod = z.infer<typeof insertDistributionPeriodSchema>;
 export type InsertGrowthPlan = z.infer<typeof insertGrowthPlanSchema>;
 export type InsertAiDecision = z.infer<typeof insertAiDecisionSchema>;
