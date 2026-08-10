@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const learningTierSchema = z.enum(["self-guided", "growth", "premium"]);
+export const learningTierSchema = z.enum(["open", "member", "steward"]);
 export type LearningTier = z.infer<typeof learningTierSchema>;
 
 export const learningSkillLevelSchema = z.enum(["beginner", "intermediate", "advanced"]);
@@ -15,7 +15,7 @@ export interface LearningPath {
   estimatedHours: number;
   thumbnailUrl: string | null;
   tags: string[];
-  authorId: number;
+  authorMemberId: number;
   requiredTier: LearningTier;
   createdAt: Date;
   updatedAt: Date;
@@ -29,26 +29,26 @@ export interface InsertLearningPath {
   estimatedHours: number;
   thumbnailUrl?: string | null;
   tags?: string[];
-  authorId: number;
+  authorMemberId: number;
   requiredTier: LearningTier;
 }
 
 export const insertLearningPathSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1),
-  category: z.string().min(1),
+  title: z.string().trim().min(1),
+  description: z.string().trim().min(1),
+  category: z.string().trim().min(1),
   skillLevel: learningSkillLevelSchema,
   estimatedHours: z.number().int().positive(),
   thumbnailUrl: z.string().nullable().optional(),
-  tags: z.array(z.string()).optional(),
-  authorId: z.number().int().positive(),
+  tags: z.array(z.string().trim().min(1)).optional(),
+  authorMemberId: z.number().int().positive(),
   requiredTier: learningTierSchema,
 });
 
 export interface LearningPathStep {
   id: number;
   pathId: number;
-  resourceId: number;
+  resourceId: number | null;
   stepOrder: number;
   title: string;
   description: string | null;
@@ -58,7 +58,7 @@ export interface LearningPathStep {
 
 export interface InsertLearningPathStep {
   pathId: number;
-  resourceId: number;
+  resourceId?: number | null;
   stepOrder: number;
   title: string;
   description?: string | null;
@@ -68,17 +68,17 @@ export interface InsertLearningPathStep {
 
 export const insertLearningPathStepSchema = z.object({
   pathId: z.number().int().positive(),
-  resourceId: z.number().int().positive(),
+  resourceId: z.number().int().positive().nullable().optional(),
   stepOrder: z.number().int().positive(),
-  title: z.string().min(1),
+  title: z.string().trim().min(1),
   description: z.string().nullable().optional(),
   estimatedMinutes: z.number().int().positive(),
   isRequired: z.boolean().optional(),
 });
 
-export interface UserLearningEnrollment {
+export interface LearningEnrollment {
   id: number;
-  userId: number;
+  memberId: number;
   pathId: number;
   enrolledAt: Date;
   completedAt: Date | null;
@@ -87,23 +87,23 @@ export interface UserLearningEnrollment {
   lastAccessedAt: Date;
 }
 
-export interface InsertUserLearningEnrollment {
-  userId: number;
+export interface InsertLearningEnrollment {
+  memberId: number;
   pathId: number;
   isActive?: boolean;
   completedAt?: Date | null;
 }
 
-export const insertUserLearningEnrollmentSchema = z.object({
-  userId: z.number().int().positive(),
+export const insertLearningEnrollmentSchema = z.object({
+  memberId: z.number().int().positive(),
   pathId: z.number().int().positive(),
   isActive: z.boolean().optional(),
   completedAt: z.date().nullable().optional(),
 });
 
-export interface UserLearningProgress {
+export interface LearningProgress {
   id: number;
-  userId: number;
+  memberId: number;
   pathId: number;
   stepId: number;
   startedAt: Date;
@@ -112,8 +112,8 @@ export interface UserLearningProgress {
   resourceRating: number | null;
 }
 
-export interface InsertUserLearningProgress {
-  userId: number;
+export interface InsertLearningProgress {
+  memberId: number;
   pathId: number;
   stepId: number;
   completedAt?: Date | null;
@@ -121,8 +121,8 @@ export interface InsertUserLearningProgress {
   resourceRating?: number | null;
 }
 
-export const insertUserLearningProgressSchema = z.object({
-  userId: z.number().int().positive(),
+export const insertLearningProgressSchema = z.object({
+  memberId: z.number().int().positive(),
   pathId: z.number().int().positive(),
   stepId: z.number().int().positive(),
   completedAt: z.date().nullable().optional(),
@@ -139,7 +139,7 @@ export interface LearningPathApi {
   estimatedHours: number;
   thumbnailUrl: string | null;
   tags: string[];
-  authorId: number;
+  authorMemberId: number;
   requiredTier: LearningTier;
   createdAt: string;
   updatedAt: string;
@@ -148,7 +148,7 @@ export interface LearningPathApi {
 export interface LearningPathStepApi {
   id: number;
   pathId: number;
-  resourceId: number;
+  resourceId: number | null;
   stepOrder: number;
   title: string;
   description: string | null;
@@ -164,7 +164,7 @@ export interface LearningPathDetailApi extends LearningPathApi {
 
 export interface LearningEnrollmentApi {
   id: number;
-  userId: number;
+  memberId: number;
   pathId: number;
   enrolledAt: string;
   completedAt: string | null;
@@ -177,7 +177,7 @@ export interface LearningEnrollmentApi {
 export interface LearningProgressApi {
   progress: Array<{
     id: number;
-    userId: number;
+    memberId: number;
     pathId: number;
     stepId: number;
     startedAt: string;
