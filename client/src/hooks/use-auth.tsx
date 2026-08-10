@@ -2,7 +2,7 @@ import { createContext, type ReactNode, useContext, useEffect, useState } from "
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 import { apiRequest, queryClient } from "../lib/queryClient";
-import { neonAuth, getNeonJwt } from "@/lib/neon-auth";
+import { neonAuth } from "@/lib/neon-auth";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextValue {
@@ -20,41 +20,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const session = neonAuth.useSession();
   const [appUser, setAppUser] = useState<User | null>(null);
-  const [isBridging, setIsBridging] = useState(false);
-  const [bridgeError, setBridgeError] = useState<Error | null>(null);
+  const [isResolvingUser, setIsResolvingUser] = useState(false);
+  const [userError, setUserError] = useState<Error | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function bridgeSession() {
+    async function resolveUser() {
       if (!session.data?.user) {
         setAppUser(null);
-        setBridgeError(null);
+        setUserError(null);
         return;
       }
 
-      setIsBridging(true);
-      setBridgeError(null);
-
+      setIsResolvingUser(true);
+      setUserError(null);
       try {
-        const token = await getNeonJwt();
-        if (!token) {
-          throw new Error("Neon Auth did not provide a JWT for this session");
-        }
-
-        const response = await fetch("/api/auth/neon/session", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          const body = (await response.json().catch(() => null)) as { message?: string } | null;
-          throw new Error(body?.message || "Unable to establish application session");
-        }
-
+        const response = await apiRequest("GET", "/api/user");
         const user = (await response.json()) as User;
         if (!cancelled) {
           setAppUser(user);
@@ -64,17 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         if (!cancelled) {
           setAppUser(null);
-          setBridgeError(error instanceof Error ? error : new Error("Authentication bridge failed"));
+          setUserError(error instanceof Error ? error : new Error("Unable to load user profile"));
         }
       } finally {
-        if (!cancelled) {
-          setIsBridging(false);
-        }
+        if (!cancelled) setIsResolvingUser(false);
       }
     }
 
-    void bridgeSession();
-
+    void resolveUser();
     return () => {
       cancelled = true;
     };
@@ -82,27 +61,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      await neonAuth.signOut();
-      try {
-        await apiRequest("POST", "/api/logout");
-      } catch {
-        // Neon is authoritative; a missing legacy session does not block logout.
+      const result = await neonAuth.signOut();
+      if (result.error) {
+        throw new Error(result.error.message || "Unable to sign out");
       }
     },
     onSuccess: () => {
       setAppUser(null);
       queryClient.clear();
-      toast({
-        title: "Signed out",
-        description: "Your session has ended.",
-      });
+      toast({ title: "Signed out", description: "Your Neon Auth session has ended." });
     },
     onError: (error) => {
-      toast({
-        title: "Sign out failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Sign out failed", description: error.message, variant: "destructive" });
     },
   });
 
@@ -112,8 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user: appUser,
-        isLoading: session.isPending || isBridging,
-        error: bridgeError || sessionError,
+        isLoading: session.isPending || isResolvingUser,
+        error: userError || sessionError,
         logoutMutation,
       }}
     >
@@ -124,8 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 }
