@@ -33,6 +33,7 @@ export const workOrders = pgTable("work_orders", {
   actualRevenueCents: integer("actual_revenue_cents").default(0).notNull(),
   assignedUserId: integer("assigned_user_id").references(() => users.id),
   assignedRoleId: integer("assigned_role_id").references(() => charterRoles.id),
+  createdByUserId: integer("created_by_user_id").references(() => users.id),
   status: text("status").default("planned").notNull(),
   dueAt: timestamp("due_at"),
   completedAt: timestamp("completed_at"),
@@ -109,7 +110,22 @@ export const aiDecisions = pgTable("ai_decisions", {
   reviewedByUserId: integer("reviewed_by_user_id").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   reviewNotes: text("review_notes"),
+  executedByUserId: integer("executed_by_user_id").references(() => users.id),
   executedAt: timestamp("executed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const authorityAuditLog = pgTable("authority_audit_log", {
+  id: serial("id").primaryKey(),
+  actorUserId: integer("actor_user_id").references(() => users.id),
+  actorEmail: text("actor_email"),
+  authority: text("authority").notNull(),
+  action: text("action").notNull(),
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id"),
+  outcome: text("outcome").default("completed").notNull(),
+  reason: text("reason"),
+  metadata: jsonb("metadata").default({}).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -129,6 +145,7 @@ export type DistributionPeriod = typeof distributionPeriods.$inferSelect;
 export type MemberDistribution = typeof memberDistributions.$inferSelect;
 export type GrowthPlan = typeof growthPlans.$inferSelect;
 export type AiDecision = typeof aiDecisions.$inferSelect;
+export type AuthorityAuditEntry = typeof authorityAuditLog.$inferSelect;
 
 export type InsertCharterRole = z.infer<typeof insertCharterRoleSchema>;
 export type InsertRoleAssignment = z.infer<typeof insertRoleAssignmentSchema>;
