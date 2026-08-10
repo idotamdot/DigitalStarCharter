@@ -9,20 +9,20 @@ export function ProtectedRoute({
   path: string;
   component: () => JSX.Element;
 }) {
-  const { user, isLoading } = useAuth();
+  const { member, isLoading } = useAuth();
 
   return (
     <Route path={path}>
       {() => {
         if (isLoading) {
           return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex min-h-screen items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           );
         }
 
-        if (!user) {
+        if (!member) {
           const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
           return <Redirect to={`/auth?returnTo=${returnTo}`} />;
         }
