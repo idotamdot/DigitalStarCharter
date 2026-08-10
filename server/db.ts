@@ -6,6 +6,7 @@ import * as resourceSchema from "@shared/resource-schema";
 import * as learningSchema from "@shared/learning-schema";
 import * as accountingSchema from "@shared/accounting-schema";
 import * as operatingSchema from "@shared/operating-schema";
+import * as qualitySchema from "@shared/quality-schema";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -26,5 +27,6 @@ export const db = drizzle({
     ...learningSchema,
     ...accountingSchema,
     ...operatingSchema,
+    ...qualitySchema,
   },
 });
