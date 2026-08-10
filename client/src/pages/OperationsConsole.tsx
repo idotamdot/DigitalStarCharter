@@ -25,9 +25,7 @@ export default function OperationsConsole() {
         <header className="mb-10 max-w-4xl">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Shared operating picture</p>
           <h1 className="mt-2 text-4xl font-bold">Charter Operating System</h1>
-          <p className="mt-3 text-lg text-slate-300">
-            Members can see how people, work, money, quality and growth fit together. Visibility is shared; consequential authority remains capability-bound and human-reviewed.
-          </p>
+          <p className="mt-3 text-lg text-slate-300">People, work, finance, quality and growth remain visible together. Financial metrics come from posted balanced journals.</p>
         </header>
 
         {summaryQuery.isLoading ? (
@@ -37,10 +35,10 @@ export default function OperationsConsole() {
         ) : (
           <div className="space-y-8">
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <Metric icon={<Landmark className="h-5 w-5" />} label="Recorded income" value={money(data.totals.incomeCents)} />
-              <Metric icon={<BriefcaseBusiness className="h-5 w-5" />} label="Operating costs" value={money(data.totals.expenseCents)} />
-              <Metric icon={<ShieldCheck className="h-5 w-5" />} label="Reserve" value={money(data.totals.reserveCents)} />
-              <Metric icon={<TrendingUp className="h-5 w-5" />} label="Net before distributions" value={money(data.totals.incomeCents - data.totals.expenseCents - data.totals.reserveCents)} />
+              <Metric icon={<Landmark className="h-5 w-5" />} label="Earned revenue" value={money(data.totals.revenueCents)} />
+              <Metric icon={<BriefcaseBusiness className="h-5 w-5" />} label="Recognized expense" value={money(data.totals.expenseCents)} />
+              <Metric icon={<Landmark className="h-5 w-5" />} label="Operating cash" value={money(data.totals.operatingCashCents)} />
+              <Metric icon={<ShieldCheck className="h-5 w-5" />} label="Reserve cash" value={money(data.totals.reserveCashCents)} />
             </section>
 
             <div className="grid gap-6 xl:grid-cols-2">
@@ -59,12 +57,12 @@ export default function OperationsConsole() {
               </Card>
 
               <Card className="border-slate-800 bg-slate-900/55">
-                <CardHeader><CardTitle>Work queue</CardTitle><CardDescription>Revenue work and operational commitments currently moving through the network.</CardDescription></CardHeader>
+                <CardHeader><CardTitle>Work queue</CardTitle><CardDescription>Current commitments and operational work.</CardDescription></CardHeader>
                 <CardContent className="space-y-3">
                   {data.work.slice(0, 10).map((work) => (
                     <div key={work.id} className={work.assignedMemberId === member?.id ? "rounded-lg border border-blue-500/30 bg-blue-950/10 p-4" : "rounded-lg border border-slate-800 p-4"}>
                       <div className="flex flex-wrap items-center justify-between gap-2"><strong>{work.title}</strong><Badge className="capitalize">{work.status.replaceAll("_", " ")}</Badge></div>
-                      <p className="mt-2 text-sm text-slate-400">Expected {money(work.expectedRevenueCents)} · Actual {money(work.actualRevenueCents)}</p>
+                      <p className="mt-2 text-sm text-slate-400">Expected {money(work.expectedRevenueCents)} · Reported {money(work.reportedRevenueCents)}</p>
                     </div>
                   ))}
                   {data.work.length === 0 && <p className="text-sm text-slate-400">No work orders yet.</p>}
@@ -74,7 +72,7 @@ export default function OperationsConsole() {
 
             <div className="grid gap-6 xl:grid-cols-2">
               <Card className="border-slate-800 bg-slate-900/55">
-                <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Sustainable growth gates</CardTitle><CardDescription>Permanent expansion should follow economic capacity, not precede it.</CardDescription></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Sustainable growth gates</CardTitle><CardDescription>Permanent expansion follows demonstrated capacity.</CardDescription></CardHeader>
                 <CardContent className="space-y-3">
                   {data.growth.map((plan) => (
                     <div key={plan.id} className="rounded-lg border border-slate-800 p-4">
@@ -87,7 +85,7 @@ export default function OperationsConsole() {
               </Card>
 
               <Card className="border-slate-800 bg-slate-900/55">
-                <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> AI recommendations</CardTitle><CardDescription>Recommendations remain proposals until a human with the required authority reviews them.</CardDescription></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> AI recommendations</CardTitle><CardDescription>Recommendations remain proposals until human review.</CardDescription></CardHeader>
                 <CardContent className="space-y-3">
                   {data.decisions.slice(0, 10).map((decision) => (
                     <div key={decision.id} className="rounded-lg border border-slate-800 p-4">
@@ -101,8 +99,22 @@ export default function OperationsConsole() {
               </Card>
             </div>
 
+            {data.journal.length > 0 && (
+              <Card className="border-slate-800 bg-slate-900/55">
+                <CardHeader><CardTitle>Recent journal entries</CardTitle><CardDescription>Detailed journal activity is shown only when your authority allows it.</CardDescription></CardHeader>
+                <CardContent className="space-y-3">
+                  {data.journal.map((entry) => (
+                    <div key={entry.id} className="rounded-lg border border-slate-800 p-4 md:flex md:items-center md:justify-between">
+                      <div><strong>{entry.description}</strong><p className="text-xs text-slate-500">{new Date(entry.occurredAt).toLocaleDateString()}</p></div>
+                      <div className="mt-2 text-sm text-slate-300 md:mt-0">Debits {money(entry.debitCents)} · Credits {money(entry.creditCents)}</div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="border-slate-800 bg-slate-900/55">
-              <CardHeader><CardTitle>Your authority snapshot</CardTitle><CardDescription>These permissions are calculated by the server from verified identity and active role assignments.</CardDescription></CardHeader>
+              <CardHeader><CardTitle>Your authority snapshot</CardTitle><CardDescription>Calculated by the server from verified identity and active role assignments.</CardDescription></CardHeader>
               <CardContent className="flex flex-wrap gap-2">
                 {data.access.capabilities.map((capability) => <Badge key={capability} variant="outline">{capability}</Badge>)}
                 {data.access.capabilities.length === 0 && <span className="text-sm text-slate-400">Ordinary member authority only.</span>}
