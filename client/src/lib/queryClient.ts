@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getNeonJwt } from "@/lib/neon-auth";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -7,16 +8,25 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+async function authHeaders(includeJson: boolean): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {};
+  if (includeJson) headers["Content-Type"] = "application/json";
+
+  const token = await getNeonJwt();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  return headers;
+}
+
 export async function apiRequest(
   method: string,
   url: string,
-  data?: unknown | undefined,
+  data?: unknown,
 ): Promise<Response> {
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    headers: await authHeaders(data !== undefined),
+    body: data !== undefined ? JSON.stringify(data) : undefined,
   });
 
   await throwIfResNotOk(res);
@@ -30,7 +40,7 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const res = await fetch(queryKey[0] as string, {
-      credentials: "include",
+      headers: await authHeaders(false),
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
