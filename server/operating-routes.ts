@@ -1,6 +1,7 @@
-import type { Express, Request, Response, NextFunction } from "express";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import type { Express } from "express";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { db } from "./db";
+import { requireAdmin, requireAuth } from "./auth";
 import {
   aiDecisions,
   charterRoles,
@@ -18,21 +19,6 @@ import {
   workOrders,
 } from "@shared/operating-schema";
 import { users } from "@shared/schema";
-
-function requireAuthenticated(req: Request, res: Response, next: NextFunction) {
-  if (!req.isAuthenticated?.()) return res.status(401).json({ message: "Unauthorized" });
-  next();
-}
-
-function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.isAuthenticated?.()) return res.status(401).json({ message: "Unauthorized" });
-  const adminEmail = process.env.ADMIN?.trim().toLowerCase();
-  const userEmail = req.user?.email?.trim().toLowerCase();
-  if (!adminEmail || userEmail !== adminEmail) {
-    return res.status(403).json({ message: "Human administrator approval required" });
-  }
-  next();
-}
 
 const defaultRoles = [
   ["Coordinator / Secretary", "people", "Keeps the organization coherent: scheduling, records, follow-through, communications and handoffs.", "Protects billable time and converts opportunities into completed work."],
@@ -56,7 +42,7 @@ export function registerOperatingRoutes(app: Express) {
     res.json({ ok: true });
   });
 
-  app.get("/api/operating/summary", requireAuthenticated, async (_req, res) => {
+  app.get("/api/operating/summary", requireAuth, async (_req, res) => {
     const [roles, assignments, work, ledger, growth, decisions, people] = await Promise.all([
       db.select().from(charterRoles).orderBy(charterRoles.id),
       db.select().from(roleAssignments).orderBy(desc(roleAssignments.assignedAt)),
@@ -89,13 +75,13 @@ export function registerOperatingRoutes(app: Express) {
     res.status(201).json(created);
   });
 
-  app.post("/api/operating/work", requireAuthenticated, async (req, res) => {
+  app.post("/api/operating/work", requireAuth, async (req, res) => {
     const input = insertWorkOrderSchema.parse(req.body);
     const [created] = await db.insert(workOrders).values(input).returning();
     res.status(201).json(created);
   });
 
-  app.patch("/api/operating/work/:id/status", requireAuthenticated, async (req, res) => {
+  app.patch("/api/operating/work/:id/status", requireAuth, async (req, res) => {
     const id = Number(req.params.id);
     const status = String(req.body.status || "");
     const completedAt = status === "completed" ? new Date() : null;
@@ -149,7 +135,7 @@ export function registerOperatingRoutes(app: Express) {
     res.status(201).json(period);
   });
 
-  app.post("/api/operating/growth/evaluate", requireAuthenticated, async (req, res) => {
+  app.post("/api/operating/growth/evaluate", requireAuth, async (req, res) => {
     const input = insertGrowthPlanSchema.parse(req.body);
     const reserveMonths = Number(input.requiredReserveMonths ?? 6);
     const postHireMonthlyCosts = input.recurringMonthlyCostsCents + input.monthlyCompensationCents;
@@ -167,7 +153,7 @@ export function registerOperatingRoutes(app: Express) {
     res.status(201).json(created);
   });
 
-  app.post("/api/operating/ai-decisions", requireAuthenticated, async (req, res) => {
+  app.post("/api/operating/ai-decisions", requireAuth, async (req, res) => {
     const input = insertAiDecisionSchema.parse({ ...req.body, status: "human_review" });
     const [created] = await db.insert(aiDecisions).values(input).returning();
     res.status(201).json(created);
