@@ -1,11 +1,11 @@
 import type { AuthorityStatus } from "./access";
+import type { AccountingMetadata } from "./accounting-schema";
 import type {
   AiDecisionStatus,
   ConsequenceLevel,
   DistributionStatus,
   GrowthAnalysis,
   GrowthPlanStatus,
-  LedgerEntryType,
   OperatingDomain,
   RoleAssignmentStatus,
   WorkOrderStatus,
@@ -44,7 +44,7 @@ export interface WorkOrderApi {
   description: string;
   revenueType: string;
   expectedRevenueCents: number;
-  actualRevenueCents: number;
+  reportedRevenueCents: number;
   assignedMemberId: number | null;
   assignedRoleId: number | null;
   createdByMemberId: number | null;
@@ -54,17 +54,17 @@ export interface WorkOrderApi {
   createdAt: string;
 }
 
-export interface LedgerEntryApi {
+export interface JournalSummaryApi {
   id: number;
   occurredAt: string;
-  type: LedgerEntryType;
-  category: string;
-  amountCents: number;
   description: string;
-  workOrderId: number | null;
+  status: "draft" | "posted" | "voided";
   recordedByMemberId: number | null;
-  source: string;
-  metadata: Record<string, unknown>;
+  approvedByMemberId: number | null;
+  metadata: AccountingMetadata;
+  createdAt: string;
+  debitCents: number;
+  creditCents: number;
 }
 
 export interface DistributionPeriodApi {
@@ -120,9 +120,10 @@ export interface AiDecisionApi {
 }
 
 export interface OperatingTotalsApi {
-  incomeCents: number;
+  revenueCents: number;
   expenseCents: number;
-  reserveCents: number;
+  operatingCashCents: number;
+  reserveCashCents: number;
 }
 
 export interface OperatingSummaryApi {
@@ -130,7 +131,7 @@ export interface OperatingSummaryApi {
   roles: CharterRoleApi[];
   assignments: RoleAssignmentApi[];
   work: WorkOrderApi[];
-  ledger: LedgerEntryApi[];
+  journal: JournalSummaryApi[];
   growth: GrowthPlanApi[];
   decisions: AiDecisionApi[];
   distributions: DistributionPeriodApi[];
