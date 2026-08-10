@@ -15,9 +15,7 @@ if (existsSync(".env.local")) {
 }
 
 const rawConnectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
-if (!rawConnectionString) {
-  throw new Error("NEON_DATABASE_URL or DATABASE_URL is required");
-}
+if (!rawConnectionString) throw new Error("NEON_DATABASE_URL or DATABASE_URL is required");
 
 const connectionString = rawConnectionString.trim().replace(/^postgres:\/\//i, "postgresql://");
 if (!connectionString.startsWith("postgresql://")) {
@@ -38,6 +36,9 @@ const dropStatements = [
   "DROP TABLE IF EXISTS growth_plans CASCADE",
   "DROP TABLE IF EXISTS member_distributions CASCADE",
   "DROP TABLE IF EXISTS distribution_periods CASCADE",
+  "DROP TABLE IF EXISTS journal_lines CASCADE",
+  "DROP TABLE IF EXISTS journal_entries CASCADE",
+  "DROP TABLE IF EXISTS accounts CASCADE",
   "DROP TABLE IF EXISTS charter_ledger_entries CASCADE",
   "DROP TABLE IF EXISTS work_orders CASCADE",
   "DROP TABLE IF EXISTS role_assignments CASCADE",
@@ -146,6 +147,37 @@ const createStatements = [
     resource_rating integer,
     UNIQUE(member_id, step_id)
   )`,
+  `CREATE TABLE accounts (
+    id serial PRIMARY KEY,
+    code text NOT NULL UNIQUE,
+    name text NOT NULL,
+    type text NOT NULL,
+    normal_balance text NOT NULL,
+    description text,
+    active boolean NOT NULL DEFAULT true,
+    created_at timestamp NOT NULL DEFAULT now()
+  )`,
+  `CREATE TABLE journal_entries (
+    id serial PRIMARY KEY,
+    occurred_at timestamp NOT NULL DEFAULT now(),
+    description text NOT NULL,
+    status text NOT NULL DEFAULT 'posted',
+    recorded_by_member_id integer REFERENCES members(id) ON DELETE SET NULL,
+    approved_by_member_id integer REFERENCES members(id) ON DELETE SET NULL,
+    approved_at timestamp,
+    reversal_of_entry_id integer,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    created_at timestamp NOT NULL DEFAULT now()
+  )`,
+  `CREATE TABLE journal_lines (
+    id serial PRIMARY KEY,
+    journal_entry_id integer NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
+    account_id integer NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
+    debit_cents integer NOT NULL DEFAULT 0 CHECK (debit_cents >= 0),
+    credit_cents integer NOT NULL DEFAULT 0 CHECK (credit_cents >= 0),
+    memo text,
+    CHECK ((debit_cents > 0 AND credit_cents = 0) OR (credit_cents > 0 AND debit_cents = 0))
+  )`,
   `CREATE TABLE charter_roles (
     id serial PRIMARY KEY,
     name text NOT NULL,
@@ -171,7 +203,7 @@ const createStatements = [
     description text NOT NULL,
     revenue_type text NOT NULL DEFAULT 'direct',
     expected_revenue_cents integer NOT NULL DEFAULT 0,
-    actual_revenue_cents integer NOT NULL DEFAULT 0,
+    reported_revenue_cents integer NOT NULL DEFAULT 0,
     assigned_member_id integer REFERENCES members(id) ON DELETE SET NULL,
     assigned_role_id integer REFERENCES charter_roles(id) ON DELETE SET NULL,
     created_by_member_id integer REFERENCES members(id) ON DELETE SET NULL,
@@ -179,18 +211,6 @@ const createStatements = [
     due_at timestamp,
     completed_at timestamp,
     created_at timestamp NOT NULL DEFAULT now()
-  )`,
-  `CREATE TABLE charter_ledger_entries (
-    id serial PRIMARY KEY,
-    occurred_at timestamp NOT NULL DEFAULT now(),
-    type text NOT NULL,
-    category text NOT NULL,
-    amount_cents integer NOT NULL,
-    description text NOT NULL,
-    work_order_id integer REFERENCES work_orders(id) ON DELETE SET NULL,
-    recorded_by_member_id integer REFERENCES members(id) ON DELETE SET NULL,
-    source text NOT NULL DEFAULT 'manual',
-    metadata jsonb NOT NULL DEFAULT '{}'::jsonb
   )`,
   `CREATE TABLE distribution_periods (
     id serial PRIMARY KEY,
@@ -265,7 +285,9 @@ const createStatements = [
   )`,
   "CREATE INDEX role_assignments_member_id_idx ON role_assignments(member_id)",
   "CREATE INDEX work_orders_assigned_member_id_idx ON work_orders(assigned_member_id)",
-  "CREATE INDEX ledger_entries_occurred_at_idx ON charter_ledger_entries(occurred_at)",
+  "CREATE INDEX journal_entries_occurred_at_idx ON journal_entries(occurred_at)",
+  "CREATE INDEX journal_lines_entry_id_idx ON journal_lines(journal_entry_id)",
+  "CREATE INDEX journal_lines_account_id_idx ON journal_lines(account_id)",
   "CREATE INDEX learning_enrollments_member_id_idx ON learning_enrollments(member_id)",
   "CREATE INDEX learning_progress_member_id_idx ON learning_progress(member_id)",
   "CREATE INDEX ai_decisions_status_idx ON ai_decisions(status)",
@@ -273,11 +295,6 @@ const createStatements = [
 ];
 
 console.log("Resetting DigitalStarCharter development tables...");
-for (const statement of dropStatements) {
-  await sql(asSqlTemplate(statement));
-}
-for (const statement of createStatements) {
-  await sql(asSqlTemplate(statement));
-}
-
+for (const statement of dropStatements) await sql(asSqlTemplate(statement));
+for (const statement of createStatements) await sql(asSqlTemplate(statement));
 console.log(`Development schema reset complete (${dropStatements.length} drops, ${createStatements.length} creates/indexes).`);
