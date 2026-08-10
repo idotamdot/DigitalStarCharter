@@ -1,11 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-
-export interface AuthorityStatus {
-  isAdmin: boolean;
-  email: string | null;
-  domains: string[];
-  capabilities: string[];
-}
+import type { AuthorityStatus, CharterCapability } from "@shared/access";
 
 export function useAuthority() {
   const query = useQuery<AuthorityStatus>({
@@ -18,6 +12,6 @@ export function useAuthority() {
     isAdmin: query.data?.isAdmin ?? false,
     domains: query.data?.domains ?? [],
     capabilities: query.data?.capabilities ?? [],
-    can: (capability: string) => Boolean(query.data?.capabilities.includes(capability)),
+    can: (capability: CharterCapability) => Boolean(query.data?.capabilities.includes(capability)),
   };
 }
