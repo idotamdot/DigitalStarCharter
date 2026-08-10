@@ -10,17 +10,30 @@ if (existsSync(".env.local")) {
   loadEnvFile(".env");
 }
 
-const rawConnectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
-if (!rawConnectionString) {
-  throw new Error("NEON_DATABASE_URL or DATABASE_URL must be set in .env.local, .env, or the process environment");
+const candidates = [
+  ["NEON_DATABASE_URL", process.env.NEON_DATABASE_URL],
+  ["DATABASE_URL", process.env.DATABASE_URL],
+] as const;
+
+const selected = candidates.find(([, value]) => {
+  if (!value) return false;
+  const normalized = value.trim().replace(/^postgres:\/\//i, "postgresql://");
+  return normalized.startsWith("postgresql://");
+});
+
+if (!selected) {
+  const present = candidates.filter(([, value]) => Boolean(value)).map(([name]) => name);
+  if (present.length === 0) {
+    throw new Error("NEON_DATABASE_URL or DATABASE_URL must be set in .env.local, .env, or the process environment");
+  }
+  throw new Error(`${present.join(" and ")} ${present.length === 1 ? "is" : "are"} present but not valid PostgreSQL URLs`);
 }
 
-const connectionString = rawConnectionString.trim().replace(/^postgres:\/\//i, "postgresql://");
-if (!connectionString.startsWith("postgresql://")) {
-  throw new Error("Neon database URL must begin with postgresql:// or postgres://");
-}
-
+const [selectedName, rawConnectionString] = selected;
+const connectionString = rawConnectionString!.trim().replace(/^postgres:\/\//i, "postgresql://");
 const sql = neon(connectionString);
+
+console.log(`Using ${selectedName} from local environment.`);
 
 const statements = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -174,8 +187,17 @@ const statements = [
   `CREATE INDEX IF NOT EXISTS authority_audit_created_at_idx ON authority_audit_log(created_at)`,
 ];
 
+function asSqlTemplate(statement: string): TemplateStringsArray {
+  const strings = [statement] as unknown as TemplateStringsArray;
+  Object.defineProperty(strings, "raw", {
+    value: [statement],
+    enumerable: false,
+  });
+  return strings;
+}
+
 for (const statement of statements) {
-  await sql.query(statement, []);
+  await sql(asSqlTemplate(statement));
 }
 
 console.log(`Charter schema applied successfully over Neon HTTPS (${statements.length} statements).`);
