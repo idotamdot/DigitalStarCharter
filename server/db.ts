@@ -1,7 +1,6 @@
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
-import * as coreSchema from "@shared/schema";
 import * as identitySchema from "@shared/identity-schema";
 import * as resourceSchema from "@shared/resource-schema";
 import * as learningSchema from "@shared/learning-schema";
@@ -21,7 +20,6 @@ export const pool = new Pool({ connectionString });
 export const db = drizzle({
   client: pool,
   schema: {
-    ...coreSchema,
     ...identitySchema,
     ...resourceSchema,
     ...learningSchema,
