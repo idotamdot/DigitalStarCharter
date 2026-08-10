@@ -10,15 +10,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { neonAuth } from "@/lib/neon-auth";
 
 function safeReturnPath(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/dashboard";
-  }
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
   return value;
 }
 
 const AuthPage = () => {
   const [, navigate] = useLocation();
-  const { user, isLoading, error: authError } = useAuth();
+  const { member, isLoading, error: authError } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -37,8 +35,7 @@ const AuthPage = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const magicLinkError = params.get("error");
-    if (magicLinkError) {
+    if (params.get("error")) {
       toast({
         title: "Sign-in link could not be used",
         description: "Request a new magic link and use the newest email you receive.",
@@ -48,10 +45,8 @@ const AuthPage = () => {
   }, [toast]);
 
   useEffect(() => {
-    if (user && !isLoading) {
-      navigate(returnTo);
-    }
-  }, [user, isLoading, navigate, returnTo]);
+    if (member && !isLoading) navigate(returnTo);
+  }, [member, isLoading, navigate, returnTo]);
 
   async function sendMagicLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,10 +59,7 @@ const AuthPage = () => {
         email: normalizedEmail,
         callbackURL,
       });
-
-      if (result.error) {
-        throw new Error(result.error.message || "Unable to send magic link");
-      }
+      if (result.error) throw new Error(result.error.message || "Unable to send magic link");
 
       setSentTo(normalizedEmail);
       toast({
@@ -86,88 +78,45 @@ const AuthPage = () => {
   }
 
   if (isLoading && !sentTo) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <Loader2 className="h-8 w-8 animate-spin text-cyan-300" />
-      </div>
-    );
+    return <div className="flex min-h-screen items-center justify-center bg-slate-950"><Loader2 className="h-8 w-8 animate-spin text-cyan-300" /></div>;
   }
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-12 text-white">
       <div className="mx-auto grid min-h-[80vh] max-w-5xl items-center gap-10 lg:grid-cols-2">
         <section>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-sm text-cyan-100">
-            <ShieldCheck className="h-4 w-4" />
-            Neon Auth · passwordless
-          </div>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-sm text-cyan-100"><ShieldCheck className="h-4 w-4" /> Neon Auth · passwordless</div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">One secure link. No password to remember.</h1>
-          <p className="mt-5 max-w-xl text-lg text-slate-300">
-            DigitalStarCharter uses Neon Auth for identity. Enter your email and we will send a one-time magic link. After verification, you return to the work you were trying to open.
-          </p>
+          <p className="mt-5 max-w-xl text-lg text-slate-300">DigitalStarCharter uses Neon Auth as its sole identity authority. Enter your email and we will send a magic link. After verification, you return to the work you were trying to open.</p>
           <div className="mt-8 space-y-3 text-sm text-slate-300">
-            <p>• Passwords are no longer required for the primary sign-in path.</p>
-            <p>• The server verifies Neon-issued identity before creating an application session.</p>
-            <p>• Protected actions still follow the Human-in-the-loop approval model.</p>
+            <p>• There is no DigitalStarCharter password database.</p>
+            <p>• Protected API calls carry a Neon-issued JWT that the server verifies against Neon’s signing keys.</p>
+            <p>• The verified identity maps to one Charter member record and its server-enforced capabilities.</p>
+            <p>• Consequential actions still follow the Human-in-the-loop approval model.</p>
           </div>
         </section>
 
         <Card className="border-cyan-400/20 bg-slate-900/90 text-white shadow-2xl shadow-cyan-950/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <Mail className="h-5 w-5 text-cyan-300" />
-              Sign in by email
-            </CardTitle>
-            <CardDescription className="text-slate-400">
-              We will return you to {returnTo} after Neon verifies the link.
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2 text-2xl"><Mail className="h-5 w-5 text-cyan-300" /> Sign in by email</CardTitle>
+            <CardDescription className="text-slate-400">We will return you to {returnTo} after Neon verifies the link.</CardDescription>
           </CardHeader>
           <CardContent>
             {sentTo ? (
               <div className="space-y-5">
-                <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-4">
-                  <p className="font-medium text-emerald-100">Check your email</p>
-                  <p className="mt-1 text-sm text-emerald-100/80">
-                    A sign-in link was sent to <strong>{sentTo}</strong>. Use the newest link if you request more than one.
-                  </p>
-                </div>
-                <Button variant="outline" className="w-full" onClick={() => setSentTo(null)}>
-                  Use a different email
-                </Button>
+                <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-4"><p className="font-medium text-emerald-100">Check your email</p><p className="mt-1 text-sm text-emerald-100/80">A sign-in link was sent to <strong>{sentTo}</strong>. Use the newest link if you request more than one.</p></div>
+                <Button variant="outline" className="w-full" onClick={() => setSentTo(null)}>Use a different email</Button>
               </div>
             ) : (
               <form onSubmit={sendMagicLink} className="space-y-5">
                 <div className="space-y-2">
                   <Label htmlFor="magic-email">Email address</Label>
-                  <Input
-                    id="magic-email"
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    required
-                    className="border-slate-700 bg-slate-950"
-                  />
+                  <Input id="magic-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required className="border-slate-700 bg-slate-950" />
                 </div>
-                <Button type="submit" className="w-full" disabled={isSending}>
-                  {isSending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending secure link…
-                    </>
-                  ) : (
-                    "Email me a magic link"
-                  )}
-                </Button>
+                <Button type="submit" className="w-full" disabled={isSending}>{isSending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending secure link…</> : "Email me a magic link"}</Button>
               </form>
             )}
-
-            {authError ? (
-              <p className="mt-5 rounded-md border border-red-400/20 bg-red-400/10 p-3 text-sm text-red-100">
-                {authError.message}
-              </p>
-            ) : null}
+            {authError ? <p className="mt-5 rounded-md border border-red-400/20 bg-red-400/10 p-3 text-sm text-red-100">{authError.message}</p> : null}
           </CardContent>
         </Card>
       </div>
