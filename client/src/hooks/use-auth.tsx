@@ -1,12 +1,13 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
-import type { User } from "@shared/schema";
+import type { Member } from "@shared/identity-schema";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { neonAuth } from "@/lib/neon-auth";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextValue {
-  user: User | null;
+  member: Member | null;
+  user: Member | null;
   isLoading: boolean;
   error: Error | null;
   logoutMutation: UseMutationResult<void, Error, void>;
@@ -19,41 +20,43 @@ export { AuthContext };
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const session = neonAuth.useSession();
-  const [appUser, setAppUser] = useState<User | null>(null);
-  const [isResolvingUser, setIsResolvingUser] = useState(false);
-  const [userError, setUserError] = useState<Error | null>(null);
+  const [member, setMember] = useState<Member | null>(null);
+  const [isResolvingMember, setIsResolvingMember] = useState(false);
+  const [memberError, setMemberError] = useState<Error | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function resolveUser() {
+    async function resolveMember() {
       if (!session.data?.user) {
-        setAppUser(null);
-        setUserError(null);
+        setMember(null);
+        setMemberError(null);
         return;
       }
 
-      setIsResolvingUser(true);
-      setUserError(null);
+      setIsResolvingMember(true);
+      setMemberError(null);
       try {
-        const response = await apiRequest("GET", "/api/user");
-        const user = (await response.json()) as User;
+        const response = await apiRequest("GET", "/api/member");
+        const resolvedMember = (await response.json()) as Member;
         if (!cancelled) {
-          setAppUser(user);
-          queryClient.setQueryData(["/api/user"], user);
-          queryClient.setQueryData(["/api/users/me"], user);
+          setMember(resolvedMember);
+          queryClient.setQueryData(["/api/member"], resolvedMember);
+          // Temporary aliases while legacy client surfaces are retired.
+          queryClient.setQueryData(["/api/user"], resolvedMember);
+          queryClient.setQueryData(["/api/users/me"], resolvedMember);
         }
       } catch (error) {
         if (!cancelled) {
-          setAppUser(null);
-          setUserError(error instanceof Error ? error : new Error("Unable to load user profile"));
+          setMember(null);
+          setMemberError(error instanceof Error ? error : new Error("Unable to load member profile"));
         }
       } finally {
-        if (!cancelled) setIsResolvingUser(false);
+        if (!cancelled) setIsResolvingMember(false);
       }
     }
 
-    void resolveUser();
+    void resolveMember();
     return () => {
       cancelled = true;
     };
@@ -67,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onSuccess: () => {
-      setAppUser(null);
+      setMember(null);
       queryClient.clear();
       toast({ title: "Signed out", description: "Your Neon Auth session has ended." });
     },
@@ -81,9 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user: appUser,
-        isLoading: session.isPending || isResolvingUser,
-        error: userError || sessionError,
+        member,
+        user: member,
+        isLoading: session.isPending || isResolvingMember,
+        error: memberError || sessionError,
         logoutMutation,
       }}
     >
@@ -92,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
