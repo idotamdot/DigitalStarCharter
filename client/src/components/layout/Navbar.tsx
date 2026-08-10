@@ -1,27 +1,9 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
-import { Link as RouterLink } from "wouter";
+import { Link as RouterLink, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { queryClient } from "@/lib/queryClient";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { HamburgerMenuIcon } from "@/lib/icons";
 import { Star } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 type NavLink = {
   text: string;
@@ -37,105 +19,39 @@ const navLinks: NavLink[] = [
   { text: "Join", href: "/join" },
   { text: "About Us", href: "/#about" },
   { text: "Dashboard", href: "/dashboard", requiresAuth: true },
-  { text: "Governance", href: "/governance", requiresAuth: true },
+  { text: "Operations", href: "/operations", requiresAuth: true },
   { text: "Resources", href: "/resources", requiresAuth: true },
   { text: "Resource Catalog", href: "/resource-catalog", requiresAuth: true },
   { text: "Learning Paths", href: "/learning-paths" },
   { text: "Constellations", href: "/constellations", requiresAuth: true },
 ];
 
-const Navbar = () => {
+export default function Navbar() {
   const [location] = useLocation();
-  const { toast } = useToast();
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);
-  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
-  const [registerForm, setRegisterForm] = useState({
-    username: "",
-    password: "",
-    email: "",
-    fullName: "",
-    businessType: "",
-  });
-
-  const { data: user, isLoading } = useQuery({
-    queryKey: ["/api/users/me"],
-    retry: false,
-    throwOnError: false,
-  });
-
+  const { user, isLoading, logoutMutation } = useAuth();
   const isHomePage = location === "/" || location.startsWith("/#");
+  const filteredLinks = navLinks.filter((link) => !link.requiresAuth || Boolean(user));
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await apiRequest("POST", "/api/users/login", loginForm);
-      queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
-      setLoginOpen(false);
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Invalid username or password",
-        variant: "destructive",
-      });
-    }
-  };
+  const signInHref = `/auth?returnTo=${encodeURIComponent(location || "/dashboard")}`;
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await apiRequest("POST", "/api/users/register", registerForm);
-      queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
-      setRegisterOpen(false);
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created",
-      });
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: "Please check your inputs and try again",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await apiRequest("POST", "/api/users/logout", {});
-      queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
-      toast({
-        title: "Logout successful",
-        description: "You have been logged out",
-      });
-      // Redirect to home if on protected pages
-      if (location.startsWith("/dashboard") || 
-          location.startsWith("/resources") || 
-          location.startsWith("/resource-catalog") ||
-          location.startsWith("/learning-paths") ||
-          location.startsWith("/constellations")) {
-        window.location.href = "/";
-      }
-    } catch (error) {
-      toast({
-        title: "Logout failed",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Filter links based on authentication status
-  const filteredLinks = navLinks.filter((link) => {
-    if (link.requiresAuth) {
-      return !!user;
-    }
-    return true;
-  });
+  const authControl = !isLoading && (
+    user ? (
+      <Button
+        onClick={() => logoutMutation.mutate()}
+        variant="outline"
+        disabled={logoutMutation.isPending}
+        className="border-blue-500 text-blue-400 hover:bg-blue-900/30"
+      >
+        Sign Out
+      </Button>
+    ) : (
+      <RouterLink href={signInHref}>
+        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
+          Sign In by Email
+        </Button>
+      </RouterLink>
+    )
+  );
 
   return (
     <nav className="bg-gray-900/80 backdrop-blur-md fixed w-full z-50 border-b border-gray-800">
@@ -148,229 +64,26 @@ const Navbar = () => {
                   <Star className="h-5 w-5 text-yellow-300" />
                 </div>
                 <span className="ml-3 text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-                  Digital Presence
+                  DigitalStarCharter
                 </span>
               </div>
             </RouterLink>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {isHomePage &&
-              filteredLinks
-                .filter((link) => link.href.startsWith("/#"))
-                .map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    className="text-gray-300 hover:text-blue-400 px-3 py-2 text-sm font-medium"
-                  >
-                    {link.text}
-                  </a>
-                ))}
-
-            {filteredLinks
-              .filter((link) => !link.href.startsWith("/#"))
-              .map((link) => (
-                <RouterLink key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 px-3 py-2 text-sm font-medium">
-                  {link.text}
-                </RouterLink>
-              ))}
-
-            {!isLoading && (
-              <>
-                {!user ? (
-                  <>
-                    <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="hidden md:block border-blue-500 text-blue-400 hover:bg-blue-900/30"
-                        >
-                          Sign In
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Sign in to your account</DialogTitle>
-                        </DialogHeader>
-                        <form onSubmit={handleLogin} className="space-y-4 mt-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="username">Username</Label>
-                            <Input
-                              id="username"
-                              value={loginForm.username}
-                              onChange={(e) =>
-                                setLoginForm({
-                                  ...loginForm,
-                                  username: e.target.value,
-                                })
-                              }
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                              id="password"
-                              type="password"
-                              value={loginForm.password}
-                              onChange={(e) =>
-                                setLoginForm({
-                                  ...loginForm,
-                                  password: e.target.value,
-                                })
-                              }
-                              required
-                            />
-                          </div>
-                          <Button type="submit" className="w-full">
-                            Sign In
-                          </Button>
-                        </form>
-                        <p className="text-center text-sm mt-4">
-                          Don't have an account?{" "}
-                          <Button
-                            variant="link"
-                            className="p-0"
-                            onClick={() => {
-                              setLoginOpen(false);
-                              setRegisterOpen(true);
-                            }}
-                          >
-                            Register
-                          </Button>
-                        </p>
-                      </DialogContent>
-                    </Dialog>
-
-                    <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
-                          Get Started
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Create an account</DialogTitle>
-                        </DialogHeader>
-                        <form
-                          onSubmit={handleRegister}
-                          className="space-y-4 mt-4"
-                        >
-                          <div className="space-y-2">
-                            <Label htmlFor="fullName">Full Name</Label>
-                            <Input
-                              id="fullName"
-                              value={registerForm.fullName}
-                              onChange={(e) =>
-                                setRegisterForm({
-                                  ...registerForm,
-                                  fullName: e.target.value,
-                                })
-                              }
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              value={registerForm.email}
-                              onChange={(e) =>
-                                setRegisterForm({
-                                  ...registerForm,
-                                  email: e.target.value,
-                                })
-                              }
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="reg-username">Username</Label>
-                            <Input
-                              id="reg-username"
-                              value={registerForm.username}
-                              onChange={(e) =>
-                                setRegisterForm({
-                                  ...registerForm,
-                                  username: e.target.value,
-                                })
-                              }
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="reg-password">Password</Label>
-                            <Input
-                              id="reg-password"
-                              type="password"
-                              value={registerForm.password}
-                              onChange={(e) =>
-                                setRegisterForm({
-                                  ...registerForm,
-                                  password: e.target.value,
-                                })
-                              }
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="businessType">Business Type</Label>
-                            <select
-                              id="businessType"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                              value={registerForm.businessType}
-                              onChange={(e) =>
-                                setRegisterForm({
-                                  ...registerForm,
-                                  businessType: e.target.value,
-                                })
-                              }
-                              required
-                            >
-                              <option value="">Select your business type</option>
-                              <option value="Sole Proprietorship">Sole Proprietorship</option>
-                              <option value="Partnership">Partnership</option>
-                              <option value="LLC">LLC</option>
-                              <option value="Not yet established">Not yet established</option>
-                            </select>
-                          </div>
-                          <Button type="submit" className="w-full">
-                            Register
-                          </Button>
-                        </form>
-                        <p className="text-center text-sm mt-4">
-                          Already have an account?{" "}
-                          <Button
-                            variant="link"
-                            className="p-0"
-                            onClick={() => {
-                              setRegisterOpen(false);
-                              setLoginOpen(true);
-                            }}
-                          >
-                            Sign in
-                          </Button>
-                        </p>
-                      </DialogContent>
-                    </Dialog>
-                  </>
-                ) : (
-                  <Button
-                    onClick={handleLogout}
-                    variant="outline"
-                    className="border-blue-500 text-blue-400 hover:bg-blue-900/30"
-                  >
-                    Sign Out
-                  </Button>
-                )}
-              </>
-            )}
+          <div className="hidden md:flex items-center space-x-5">
+            {isHomePage && filteredLinks.filter((link) => link.href.startsWith("/#")).map((link) => (
+              <a key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 px-2 py-2 text-sm font-medium">
+                {link.text}
+              </a>
+            ))}
+            {filteredLinks.filter((link) => !link.href.startsWith("/#")).map((link) => (
+              <RouterLink key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 px-2 py-2 text-sm font-medium">
+                {link.text}
+              </RouterLink>
+            ))}
+            {authControl}
           </div>
 
-          {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
             <Sheet>
               <SheetTrigger asChild>
@@ -380,61 +93,16 @@ const Navbar = () => {
               </SheetTrigger>
               <SheetContent side="right" className="bg-gray-900/95 border-gray-800">
                 <div className="flex flex-col space-y-4 mt-6">
-                  {isHomePage &&
-                    filteredLinks
-                      .filter((link) => link.href.startsWith("/#"))
-                      .map((link) => (
-                        <a
-                          key={link.href}
-                          href={link.href}
-                          className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium"
-                        >
-                          {link.text}
-                        </a>
-                      ))}
-
-                  {filteredLinks
-                    .filter((link) => !link.href.startsWith("/#"))
-                    .map((link) => (
-                      <RouterLink key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium">
-                        {link.text}
-                      </RouterLink>
-                    ))}
-
-                  {!isLoading && (
-                    <>
-                      {!user ? (
-                        <>
-                          <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className="w-full border-blue-500 text-blue-400 hover:bg-blue-900/30"
-                              >
-                                Sign In
-                              </Button>
-                            </DialogTrigger>
-                          </Dialog>
-
-                          <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
-                            <DialogTrigger asChild>
-                              <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
-                                Get Started
-                              </Button>
-                            </DialogTrigger>
-                          </Dialog>
-                        </>
-                      ) : (
-                        <Button
-                          onClick={handleLogout}
-                          variant="outline"
-                          className="w-full border-blue-500 text-blue-400 hover:bg-blue-900/30"
-                        >
-                          Sign Out
-                        </Button>
-                      )}
-                    </>
-                  )}
+                  {filteredLinks.map((link) => link.href.startsWith("/#") ? (
+                    <a key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium">
+                      {link.text}
+                    </a>
+                  ) : (
+                    <RouterLink key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium">
+                      {link.text}
+                    </RouterLink>
+                  ))}
+                  {authControl}
                 </div>
               </SheetContent>
             </Sheet>
@@ -443,6 +111,4 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
-
-export default Navbar;
+}
