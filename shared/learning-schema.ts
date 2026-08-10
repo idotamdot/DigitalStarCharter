@@ -2,19 +2,24 @@ import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { members } from "./identity-schema";
 import { resources } from "./resource-schema";
-import { learningSkillLevelSchema, learningTierSchema } from "./learning";
+import {
+  learningSkillLevelSchema,
+  learningTierSchema,
+  type LearningSkillLevel,
+  type LearningTier,
+} from "./learning";
 
 export const learningPaths = pgTable("learning_paths", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   category: text("category").notNull(),
-  skillLevel: text("skill_level").notNull(),
+  skillLevel: text("skill_level").$type<LearningSkillLevel>().notNull(),
   estimatedHours: integer("estimated_hours").notNull(),
   thumbnailUrl: text("thumbnail_url"),
   tags: jsonb("tags").$type<string[]>().default([]).notNull(),
   authorMemberId: integer("author_member_id").references(() => members.id, { onDelete: "restrict" }).notNull(),
-  requiredTier: text("required_tier").notNull().default("member"),
+  requiredTier: text("required_tier").$type<LearningTier>().notNull().default("member"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
