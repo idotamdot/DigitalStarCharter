@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { verifyNeonJwt } from "./neon-auth";
 import { getAccessSnapshot, isConfiguredAdmin } from "./access-control";
+import { enforceGlobalAuthorization } from "./global-policy";
 import { users, type User as AppUser } from "@shared/schema";
 
 declare global {
@@ -82,8 +83,6 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
 }
 
 export function setupAuth(app: Express) {
-  // Resolve a valid Neon bearer token opportunistically so legacy read routes that
-  // inspect req.isAuthenticated() continue to work during the Neon-only migration.
   app.use(async (req, _res, next) => {
     if (!req.path.startsWith("/api/")) return next();
     try {
@@ -94,6 +93,9 @@ export function setupAuth(app: Express) {
     req.isAuthenticated = () => Boolean(req.user);
     next();
   });
+
+  // Central policy runs before the legacy route declarations that follow setupAuth().
+  app.use(enforceGlobalAuthorization);
 
   app.post("/api/register", (_req, res) => {
     res.status(410).json({ message: "Password registration has been retired. Use Neon magic-link sign-in." });
