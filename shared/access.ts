@@ -9,6 +9,7 @@ export const charterCapabilities = [
   "work.create",
   "work.assign",
   "quality.manage",
+  "quality.override",
   "catalog.manage",
   "learning.manage",
   "ai.propose",
