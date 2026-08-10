@@ -22,11 +22,12 @@ export default function QualityConsole() {
   const [selectedWorkId, setSelectedWorkId] = useState<number | null>(null);
   const [evidence, setEvidence] = useState("");
   const [notes, setNotes] = useState("");
+  const qualityUrl = selectedWorkId ? `/api/quality/work/${selectedWorkId}` : "/api/quality/work/unselected";
 
   const work = useMemo(() => summary.data?.work.filter((item) => item.status !== "completed" && item.status !== "cancelled") ?? [], [summary.data]);
   const selectedWork = work.find((item) => item.id === selectedWorkId) ?? null;
   const quality = useQuery<WorkQualityApi>({
-    queryKey: ["/api/quality/work", selectedWorkId],
+    queryKey: [qualityUrl],
     enabled: selectedWorkId !== null,
   });
 
@@ -44,7 +45,7 @@ export default function QualityConsole() {
     onSuccess: async () => {
       setEvidence("");
       setNotes("");
-      await queryClient.invalidateQueries({ queryKey: ["/api/quality/work", selectedWorkId] });
+      await queryClient.invalidateQueries({ queryKey: [qualityUrl] });
     },
   });
 
