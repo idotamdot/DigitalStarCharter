@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 import type { AuthorityStatus, CharterCapability } from "@shared/access";
 
 export function useAuthority() {
+  const { member } = useAuth();
   const query = useQuery<AuthorityStatus>({
     queryKey: ["/api/admin/status"],
+    enabled: Boolean(member),
     retry: false,
   });
 
