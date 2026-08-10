@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { db } from "./db";
 import {
   accounts,
@@ -6,6 +6,7 @@ import {
   journalLines,
   postJournalEntrySchema,
   type Account,
+  type AccountingMetadata,
   type AccountType,
   type PostJournalEntryInput,
 } from "@shared/accounting-schema";
@@ -44,7 +45,7 @@ export interface JournalSummary {
   status: "draft" | "posted" | "voided";
   recordedByMemberId: number | null;
   approvedByMemberId: number | null;
-  metadata: Record<string, unknown>;
+  metadata: AccountingMetadata;
   createdAt: Date;
   debitCents: number;
   creditCents: number;
@@ -68,8 +69,7 @@ export async function postBalancedJournal(
 ): Promise<number> {
   const input = postJournalEntrySchema.parse(rawInput);
   const accountIds = [...new Set(input.lines.map((line) => line.accountId))];
-  const activeAccounts = await db.select({ id: accounts.id, active: accounts.active })
-    .from(accounts);
+  const activeAccounts = await db.select({ id: accounts.id, active: accounts.active }).from(accounts);
   const allowed = new Set(activeAccounts.filter((account) => account.active).map((account) => account.id));
 
   for (const accountId of accountIds) {
@@ -136,8 +136,10 @@ export async function getRecentJournalEntries(limit = 50): Promise<JournalSummar
   const entries = await db.select().from(journalEntries).orderBy(desc(journalEntries.occurredAt)).limit(limit);
   if (entries.length === 0) return [];
 
-  const lines = await db.select().from(journalLines);
+  const entryIds = entries.map((entry) => entry.id);
+  const lines = await db.select().from(journalLines).where(inArray(journalLines.journalEntryId, entryIds));
   const totalsByEntry = new Map<number, { debitCents: number; creditCents: number }>();
+
   for (const line of lines) {
     const current = totalsByEntry.get(line.journalEntryId) ?? { debitCents: 0, creditCents: 0 };
     current.debitCents += line.debitCents;
