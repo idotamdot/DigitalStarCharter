@@ -17,7 +17,9 @@ const navLinks: readonly NavLink[] = [
   { text: "Knowledge", href: "/resources" },
   { text: "Learning", href: "/learning-paths" },
   { text: "Dashboard", href: "/dashboard", requiresAuth: true },
+  { text: "Profile", href: "/profile", requiresAuth: true },
   { text: "Operations", href: "/operations", requiresAuth: true },
+  { text: "Quality", href: "/quality", requiresAuth: true },
 ];
 
 export default function Navbar() {
@@ -29,70 +31,47 @@ export default function Navbar() {
 
   const authControl = !isLoading && (
     member ? (
-      <Button
-        onClick={() => logoutMutation.mutate()}
-        variant="outline"
-        disabled={logoutMutation.isPending}
-        className="border-blue-500 text-blue-400 hover:bg-blue-900/30"
-      >
+      <Button onClick={() => logoutMutation.mutate()} variant="outline" disabled={logoutMutation.isPending} className="border-blue-500 text-blue-400 hover:bg-blue-900/30">
         Sign Out
       </Button>
     ) : (
       <RouterLink href={signInHref}>
-        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
-          Sign In by Email
-        </Button>
+        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">Sign In by Email</Button>
       </RouterLink>
     )
   );
 
   const adminLink = member && authority.isAdmin ? (
-    <RouterLink href="/admin" className="inline-flex items-center gap-1 text-amber-300 hover:text-amber-200 px-2 py-2 text-sm font-semibold">
+    <RouterLink href="/admin" className="inline-flex items-center gap-1 px-2 py-2 text-sm font-semibold text-amber-300 hover:text-amber-200">
       <ShieldCheck className="h-4 w-4" /> Admin
     </RouterLink>
   ) : null;
 
   return (
-    <nav className="bg-gray-900/80 backdrop-blur-md fixed w-full z-50 border-b border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+    <nav className="fixed z-50 w-full border-b border-gray-800 bg-gray-900/80 backdrop-blur-md">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 justify-between">
           <div className="flex items-center">
             <RouterLink href="/">
-              <div className="flex-shrink-0 flex items-center cursor-pointer">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white">
-                  <Star className="h-5 w-5 text-yellow-300" />
-                </div>
-                <span className="ml-3 text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-                  DigitalStarCharter
-                </span>
+              <div className="flex cursor-pointer items-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white"><Star className="h-5 w-5 text-yellow-300" /></div>
+                <span className="ml-3 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-xl font-bold text-transparent">DigitalStarCharter</span>
               </div>
             </RouterLink>
           </div>
 
-          <div className="hidden md:flex items-center space-x-5">
-            {filteredLinks.map((link) => (
-              <RouterLink key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 px-2 py-2 text-sm font-medium">
-                {link.text}
-              </RouterLink>
-            ))}
+          <div className="hidden items-center space-x-5 md:flex">
+            {filteredLinks.map((link) => <RouterLink key={link.href} href={link.href} className="px-2 py-2 text-sm font-medium text-gray-300 hover:text-blue-400">{link.text}</RouterLink>)}
             {adminLink}
             {authControl}
           </div>
 
-          <div className="md:hidden flex items-center">
+          <div className="flex items-center md:hidden">
             <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-gray-300">
-                  <HamburgerMenuIcon className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="bg-gray-900/95 border-gray-800">
-                <div className="flex flex-col space-y-4 mt-6">
-                  {filteredLinks.map((link) => (
-                    <RouterLink key={link.href} href={link.href} className="text-gray-300 hover:text-blue-400 py-2 text-base font-medium">
-                      {link.text}
-                    </RouterLink>
-                  ))}
+              <SheetTrigger asChild><Button variant="ghost" size="icon" className="text-gray-300"><HamburgerMenuIcon className="h-6 w-6" /></Button></SheetTrigger>
+              <SheetContent side="right" className="border-gray-800 bg-gray-900/95">
+                <div className="mt-6 flex flex-col space-y-4">
+                  {filteredLinks.map((link) => <RouterLink key={link.href} href={link.href} className="py-2 text-base font-medium text-gray-300 hover:text-blue-400">{link.text}</RouterLink>)}
                   {adminLink}
                   {authControl}
                 </div>
