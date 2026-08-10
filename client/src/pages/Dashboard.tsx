@@ -45,81 +45,40 @@ export default function Dashboard() {
         <section className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Metric icon={<BriefcaseBusiness className="h-5 w-5" />} label="Active work" value={String(assignedWork.length)} />
           <Metric icon={<GraduationCap className="h-5 w-5" />} label="Learning paths" value={String(activeLearning.length)} />
-          <Metric icon={<WalletCards className="h-5 w-5" />} label="Recorded network income" value={money(summary?.totals.incomeCents ?? 0)} />
+          <Metric icon={<WalletCards className="h-5 w-5" />} label="Earned network revenue" value={money(summary?.totals.revenueCents ?? 0)} />
           <Metric icon={<ShieldCheck className="h-5 w-5" />} label="Your authority domains" value={String(summary?.access.domains.length ?? 0)} />
         </section>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card className="border-slate-800 bg-slate-900/55">
-            <CardHeader>
-              <CardTitle>Your roles</CardTitle>
-              <CardDescription>Roles describe responsibility and authority, not human worth.</CardDescription>
-            </CardHeader>
+            <CardHeader><CardTitle>Your roles</CardTitle><CardDescription>Roles describe responsibility and authority, not human worth.</CardDescription></CardHeader>
             <CardContent className="space-y-3">
-              {assignments.length === 0 ? (
-                <p className="text-sm text-slate-400">No operating role has been assigned yet.</p>
-              ) : assignments.map((assignment) => {
+              {assignments.length === 0 ? <p className="text-sm text-slate-400">No operating role has been assigned yet.</p> : assignments.map((assignment) => {
                 const role = roleById.get(assignment.roleId);
-                return (
-                  <div key={assignment.id} className="rounded-lg border border-slate-800 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <strong>{role?.name ?? "Role"}</strong>
-                      <Badge variant="outline" className="capitalize">{role?.domain ?? "member"}</Badge>
-                    </div>
-                    {role?.description && <p className="mt-2 text-sm text-slate-400">{role.description}</p>}
-                  </div>
-                );
+                return <div key={assignment.id} className="rounded-lg border border-slate-800 p-4"><div className="flex items-center justify-between gap-3"><strong>{role?.name ?? "Role"}</strong><Badge variant="outline" className="capitalize">{role?.domain ?? "member"}</Badge></div>{role?.description && <p className="mt-2 text-sm text-slate-400">{role.description}</p>}</div>;
               })}
             </CardContent>
           </Card>
 
           <Card className="border-slate-800 bg-slate-900/55">
-            <CardHeader>
-              <CardTitle>Work in your hands</CardTitle>
-              <CardDescription>Only work currently assigned to you appears here.</CardDescription>
-            </CardHeader>
+            <CardHeader><CardTitle>Work in your hands</CardTitle><CardDescription>Only work currently assigned to you appears here.</CardDescription></CardHeader>
             <CardContent className="space-y-3">
-              {assignedWork.length === 0 ? (
-                <p className="text-sm text-slate-400">You have no active work orders.</p>
-              ) : assignedWork.slice(0, 6).map((work) => (
-                <div key={work.id} className="rounded-lg border border-slate-800 p-4">
-                  <div className="flex items-center justify-between gap-3"><strong>{work.title}</strong><Badge className="capitalize">{work.status.replaceAll("_", " ")}</Badge></div>
-                  <p className="mt-2 text-sm text-slate-400">{work.description}</p>
-                </div>
-              ))}
+              {assignedWork.length === 0 ? <p className="text-sm text-slate-400">You have no active work orders.</p> : assignedWork.slice(0, 6).map((work) => <div key={work.id} className="rounded-lg border border-slate-800 p-4"><div className="flex items-center justify-between gap-3"><strong>{work.title}</strong><Badge className="capitalize">{work.status.replaceAll("_", " ")}</Badge></div><p className="mt-2 text-sm text-slate-400">{work.description}</p></div>)}
               <Button asChild variant="outline" className="w-full"><Link href="/operations">Open operating system</Link></Button>
             </CardContent>
           </Card>
 
           <Card className="border-slate-800 bg-slate-900/55">
-            <CardHeader>
-              <CardTitle>Learning & role mobility</CardTitle>
-              <CardDescription>Build capability for new work before role changes become necessary.</CardDescription>
-            </CardHeader>
+            <CardHeader><CardTitle>Learning & role mobility</CardTitle><CardDescription>Build capability for new work before role changes become necessary.</CardDescription></CardHeader>
             <CardContent className="space-y-4">
-              {activeLearning.length === 0 ? (
-                <div className="text-center py-6"><Sparkles className="mx-auto mb-3 h-7 w-7 text-violet-300" /><p className="text-sm text-slate-400">No active learning path.</p></div>
-              ) : activeLearning.slice(0, 4).map((enrollment) => (
-                <div key={enrollment.id}>
-                  <div className="mb-2 flex justify-between gap-3 text-sm"><span>{enrollment.path?.title ?? "Learning path"}</span><span className="text-slate-400">{enrollment.progressPercent}%</span></div>
-                  <Progress value={enrollment.progressPercent} />
-                </div>
-              ))}
+              {activeLearning.length === 0 ? <div className="text-center py-6"><Sparkles className="mx-auto mb-3 h-7 w-7 text-violet-300" /><p className="text-sm text-slate-400">No active learning path.</p></div> : activeLearning.slice(0, 4).map((enrollment) => <div key={enrollment.id}><div className="mb-2 flex justify-between gap-3 text-sm"><span>{enrollment.path?.title ?? "Learning path"}</span><span className="text-slate-400">{enrollment.progressPercent}%</span></div><Progress value={enrollment.progressPercent} /></div>)}
               <Button asChild variant="outline" className="w-full"><Link href="/learning-paths"><BookOpen className="mr-2 h-4 w-4" /> Explore learning</Link></Button>
             </CardContent>
           </Card>
 
           <Card className="border-slate-800 bg-slate-900/55">
-            <CardHeader>
-              <CardTitle>Human-in-the-loop authority</CardTitle>
-              <CardDescription>Your current server-enforced capability snapshot.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {(summary?.access.capabilities ?? []).map((capability) => <Badge key={capability} variant="outline">{capability}</Badge>)}
-                {(summary?.access.capabilities.length ?? 0) === 0 && <p className="text-sm text-slate-400">No steward capabilities assigned. Ordinary member actions remain available.</p>}
-              </div>
-            </CardContent>
+            <CardHeader><CardTitle>Human-in-the-loop authority</CardTitle><CardDescription>Your current server-enforced capability snapshot.</CardDescription></CardHeader>
+            <CardContent><div className="flex flex-wrap gap-2">{(summary?.access.capabilities ?? []).map((capability) => <Badge key={capability} variant="outline">{capability}</Badge>)}{(summary?.access.capabilities.length ?? 0) === 0 && <p className="text-sm text-slate-400">No steward capabilities assigned. Ordinary member actions remain available.</p>}</div></CardContent>
           </Card>
         </div>
       </main>
@@ -129,12 +88,5 @@ export default function Dashboard() {
 }
 
 function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <Card className="border-slate-800 bg-slate-900/55">
-      <CardContent className="p-5">
-        <div className="mb-3 flex items-center gap-2 text-slate-400">{icon}<span className="text-sm">{label}</span></div>
-        <div className="text-2xl font-bold">{value}</div>
-      </CardContent>
-    </Card>
-  );
+  return <Card className="border-slate-800 bg-slate-900/55"><CardContent className="p-5"><div className="mb-3 flex items-center gap-2 text-slate-400">{icon}<span className="text-sm">{label}</span></div><div className="text-2xl font-bold">{value}</div></CardContent></Card>;
 }
