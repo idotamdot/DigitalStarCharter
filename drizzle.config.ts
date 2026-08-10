@@ -28,6 +28,7 @@ export default defineConfig({
     "./shared/learning-schema.ts",
     "./shared/accounting-schema.ts",
     "./shared/operating-schema.ts",
+    "./shared/quality-schema.ts",
   ],
   dialect: "postgresql",
   dbCredentials: {
