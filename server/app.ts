@@ -4,7 +4,7 @@ import { registerAccountingRoutes } from "./accounting-routes";
 import { registerLearningRoutes } from "./learning-routes";
 import { registerOperatingRoutes } from "./operating-routes";
 import { registerResourceRoutes } from "./resource-routes";
-import { log } from "./vite";
+import { log } from "./log";
 
 interface HttpErrorShape {
   status?: number;
