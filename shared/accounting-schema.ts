@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { members } from "./identity-schema";
@@ -27,7 +27,7 @@ export const accounts = pgTable("accounts", {
   type: text("type").$type<AccountType>().notNull(),
   normalBalance: text("normal_balance").$type<AccountNormalBalance>().notNull(),
   description: text("description"),
-  active: integer("active").$type<0 | 1>().default(1).notNull(),
+  active: boolean("active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
