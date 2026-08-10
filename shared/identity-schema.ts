@@ -1,24 +1,29 @@
 import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { z } from "zod";
 
-export type MemberStatus = "active" | "paused" | "departed";
+export const memberStatusSchema = z.enum(["active", "paused", "departed"]);
+export type MemberStatus = z.infer<typeof memberStatusSchema>;
 
-export interface MemberSkills {
-  primary: string[];
-  developing: string[];
-}
+export const memberSkillsSchema = z.object({
+  primary: z.array(z.string().trim().min(1).max(100)).max(50),
+  developing: z.array(z.string().trim().min(1).max(100)).max(50),
+});
+export type MemberSkills = z.infer<typeof memberSkillsSchema>;
 
-export interface MemberPreferences {
-  preferredWork: string[];
-  avoidWork: string[];
-  communication: string[];
-}
+export const memberPreferencesSchema = z.object({
+  preferredWork: z.array(z.string().trim().min(1).max(160)).max(50),
+  avoidWork: z.array(z.string().trim().min(1).max(160)).max(50),
+  communication: z.array(z.string().trim().min(1).max(160)).max(20),
+});
+export type MemberPreferences = z.infer<typeof memberPreferencesSchema>;
 
-export interface MemberConstraints {
-  schedule?: string;
-  mobility?: string;
-  accessibility?: string[];
-  notes?: string;
-}
+export const memberConstraintsSchema = z.object({
+  schedule: z.string().trim().max(1000).optional(),
+  mobility: z.string().trim().max(1000).optional(),
+  accessibility: z.array(z.string().trim().min(1).max(200)).max(50).optional(),
+  notes: z.string().trim().max(2000).optional(),
+});
+export type MemberConstraints = z.infer<typeof memberConstraintsSchema>;
 
 export const members = pgTable("members", {
   id: serial("id").primaryKey(),
@@ -42,5 +47,18 @@ export const memberProfiles = pgTable("member_profiles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const updateMemberIdentitySchema = z.object({
+  displayName: z.string().trim().min(1).max(160).optional(),
+});
+
+export const updateMemberProfileSchema = z.object({
+  skills: memberSkillsSchema.optional(),
+  preferences: memberPreferencesSchema.optional(),
+  constraints: memberConstraintsSchema.optional(),
+  learningGoals: z.array(z.string().trim().min(1).max(200)).max(50).optional(),
+  availabilityNotes: z.string().trim().max(2000).nullable().optional(),
+});
+
 export type Member = typeof members.$inferSelect;
 export type MemberProfile = typeof memberProfiles.$inferSelect;
+export type UpdateMemberProfileInput = z.infer<typeof updateMemberProfileSchema>;
