@@ -8,6 +8,7 @@ import { registerOperatingRoutes } from "./operating-routes";
 import { enforceQualityBeforeCompletion } from "./quality-completion-guard";
 import { registerQualityRoutes } from "./quality-routes";
 import { registerResourceRoutes } from "./resource-routes";
+import { registerStandardBootstrapPrerequisites } from "./standard-bootstrap";
 import { log } from "./log";
 
 interface HttpErrorShape {
@@ -38,6 +39,7 @@ export function createApp(): Express {
   registerLearningRoutes(app);
   registerAccountingRoutes(app);
   registerQualityRoutes(app);
+  registerStandardBootstrapPrerequisites(app);
   app.use(enforceQualityBeforeCompletion);
   registerOperatingRoutes(app);
 
