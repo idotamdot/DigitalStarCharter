@@ -1,4 +1,4 @@
-import { boolean, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export type MemberStatus = "active" | "paused" | "departed";
 
@@ -32,7 +32,7 @@ export const members = pgTable("members", {
 });
 
 export const memberProfiles = pgTable("member_profiles", {
-  memberId: serial("member_id").primaryKey().references(() => members.id, { onDelete: "cascade" }),
+  memberId: integer("member_id").primaryKey().references(() => members.id, { onDelete: "cascade" }),
   skills: jsonb("skills").$type<MemberSkills>().default({ primary: [], developing: [] }).notNull(),
   preferences: jsonb("preferences").$type<MemberPreferences>().default({ preferredWork: [], avoidWork: [], communication: [] }).notNull(),
   constraints: jsonb("constraints").$type<MemberConstraints>().default({}).notNull(),
