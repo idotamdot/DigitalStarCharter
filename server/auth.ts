@@ -98,29 +98,14 @@ export function setupAuth(app: Express) {
     try {
       await resolveOptionalIdentity(req);
     } catch {
-      // Public routes remain public. Protected routes call requireAuth and reject.
+      // Public API routes remain public. Protected routes call requireAuth and reject.
     }
     next();
   });
 
   app.use(enforceGlobalAuthorization);
 
-  app.post("/api/register", (_req, res) => {
-    res.status(410).json({ message: "Password registration has been retired. Use Neon magic-link sign-in." });
-  });
-
-  app.post("/api/login", (_req, res) => {
-    res.status(410).json({ message: "Password login has been retired. Use Neon magic-link sign-in." });
-  });
-
-  app.post("/api/logout", (_req, res) => res.status(204).end());
-
   app.get("/api/member", requireAuth, (req, res) => {
-    res.json(req.member);
-  });
-
-  // Temporary compatibility alias while the client is migrated from /api/user.
-  app.get("/api/user", requireAuth, (req, res) => {
     res.json(req.member);
   });
 
