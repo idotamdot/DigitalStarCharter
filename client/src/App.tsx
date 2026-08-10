@@ -14,6 +14,8 @@ import ResourceDetail from "@/pages/ResourceDetail";
 import AuthPage from "@/pages/auth-page";
 import OperationsConsole from "@/pages/OperationsConsole";
 import AdminConsole from "@/pages/AdminConsole";
+import MemberProfile from "@/pages/MemberProfile";
+import QualityConsole from "@/pages/QualityConsole";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -28,7 +30,9 @@ function Router() {
       <Route path="/learning-paths" component={LearningPaths} />
       <Route path="/learning-paths/:id">{() => <LearningPathDetail />}</Route>
       <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/profile" component={MemberProfile} />
       <ProtectedRoute path="/operations" component={OperationsConsole} />
+      <ProtectedRoute path="/quality" component={QualityConsole} />
       <ProtectedRoute path="/admin" component={AdminConsole} />
       <Route component={NotFound} />
     </Switch>
