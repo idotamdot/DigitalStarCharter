@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { requireAuth } from "./auth";
 import { requireCapability, writeAuthorityAudit } from "./access-control";
@@ -46,9 +47,9 @@ export function registerAccountingRoutes(app: Express) {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ message: "Invalid journal entry id" });
 
-    const [entry] = await db.select().from(journalEntries).where((await import("drizzle-orm")).eq(journalEntries.id, id)).limit(1);
+    const [entry] = await db.select().from(journalEntries).where(eq(journalEntries.id, id)).limit(1);
     if (!entry) return res.status(404).json({ message: "Journal entry not found" });
-    const lines = await db.select().from(journalLines).where((await import("drizzle-orm")).eq(journalLines.journalEntryId, id));
+    const lines = await db.select().from(journalLines).where(eq(journalLines.journalEntryId, id));
     res.json({ entry, lines });
   });
 
