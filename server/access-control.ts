@@ -3,23 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "./db";
 import { charterRoles, roleAssignments, authorityAuditLog } from "@shared/operating-schema";
 import type { Member } from "@shared/identity-schema";
-
-export type CharterCapability =
-  | "admin"
-  | "roles.assign"
-  | "governance.manage"
-  | "finance.record"
-  | "finance.distribute"
-  | "growth.evaluate"
-  | "growth.approve"
-  | "work.create"
-  | "work.assign"
-  | "quality.manage"
-  | "catalog.manage"
-  | "learning.manage"
-  | "ai.propose"
-  | "ai.review"
-  | "ai.execute";
+import type { AuthorityStatus, CharterCapability } from "@shared/access";
 
 const capabilityDomains: Partial<Record<CharterCapability, readonly string[]>> = {
   "finance.record": ["finance"],
@@ -42,12 +26,6 @@ const adminOnly = new Set<CharterCapability>([
   "ai.execute",
 ]);
 
-export interface AccessSnapshot {
-  isAdmin: boolean;
-  domains: string[];
-  capabilities: CharterCapability[];
-}
-
 export function configuredAdminEmail(): string | null {
   return process.env.ADMIN?.trim().toLowerCase() || null;
 }
@@ -57,11 +35,12 @@ export function isConfiguredAdmin(member: Member | undefined): boolean {
   return Boolean(adminEmail && member?.email.trim().toLowerCase() === adminEmail);
 }
 
-export async function getAccessSnapshot(member: Member): Promise<AccessSnapshot> {
+export async function getAccessSnapshot(member: Member): Promise<AuthorityStatus> {
   const isAdmin = isConfiguredAdmin(member);
   if (isAdmin) {
     return {
       isAdmin: true,
+      email: member.email,
       domains: ["people", "work", "finance", "quality", "growth", "governance"],
       capabilities: [
         "admin",
@@ -100,7 +79,7 @@ export async function getAccessSnapshot(member: Member): Promise<AccessSnapshot>
     return allowedDomains.some((domain) => domains.includes(domain));
   });
 
-  return { isAdmin: false, domains, capabilities };
+  return { isAdmin: false, email: member.email, domains, capabilities };
 }
 
 export async function memberHasCapability(member: Member, capability: CharterCapability): Promise<boolean> {
