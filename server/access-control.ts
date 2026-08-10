@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
 import { charterRoles, roleAssignments, authorityAuditLog } from "@shared/operating-schema";
-import type { User } from "@shared/schema";
+import type { Member } from "@shared/identity-schema";
 
 export type CharterCapability =
   | "admin"
@@ -52,13 +52,13 @@ export function configuredAdminEmail(): string | null {
   return process.env.ADMIN?.trim().toLowerCase() || null;
 }
 
-export function isConfiguredAdmin(user: User | undefined): boolean {
+export function isConfiguredAdmin(member: Member | undefined): boolean {
   const adminEmail = configuredAdminEmail();
-  return Boolean(adminEmail && user?.email?.trim().toLowerCase() === adminEmail);
+  return Boolean(adminEmail && member?.email.trim().toLowerCase() === adminEmail);
 }
 
-export async function getAccessSnapshot(user: User): Promise<AccessSnapshot> {
-  const isAdmin = isConfiguredAdmin(user);
+export async function getAccessSnapshot(member: Member): Promise<AccessSnapshot> {
+  const isAdmin = isConfiguredAdmin(member);
   if (isAdmin) {
     return {
       isAdmin: true,
@@ -88,7 +88,7 @@ export async function getAccessSnapshot(user: User): Promise<AccessSnapshot> {
     .from(roleAssignments)
     .innerJoin(charterRoles, eq(roleAssignments.roleId, charterRoles.id))
     .where(and(
-      eq(roleAssignments.userId, user.id),
+      eq(roleAssignments.memberId, member.id),
       eq(roleAssignments.status, "active"),
       eq(charterRoles.active, true),
       eq(charterRoles.humanAuthority, true),
@@ -103,17 +103,17 @@ export async function getAccessSnapshot(user: User): Promise<AccessSnapshot> {
   return { isAdmin: false, domains, capabilities };
 }
 
-export async function userHasCapability(user: User, capability: CharterCapability): Promise<boolean> {
-  if (isConfiguredAdmin(user)) return true;
+export async function memberHasCapability(member: Member, capability: CharterCapability): Promise<boolean> {
+  if (isConfiguredAdmin(member)) return true;
   if (adminOnly.has(capability)) return false;
-  const snapshot = await getAccessSnapshot(user);
+  const snapshot = await getAccessSnapshot(member);
   return snapshot.capabilities.includes(capability);
 }
 
 export function requireCapability(capability: CharterCapability) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) return res.status(401).json({ message: "Neon Auth sign-in required" });
-    if (!(await userHasCapability(req.user, capability))) {
+    if (!req.member) return res.status(401).json({ message: "Neon Auth sign-in required" });
+    if (!(await memberHasCapability(req.member, capability))) {
       return res.status(403).json({ message: `Missing required authority: ${capability}` });
     }
     next();
@@ -121,7 +121,7 @@ export function requireCapability(capability: CharterCapability) {
 }
 
 export async function writeAuthorityAudit(input: {
-  actor?: User;
+  actor?: Member;
   authority: string;
   action: string;
   targetType: string;
@@ -131,7 +131,7 @@ export async function writeAuthorityAudit(input: {
   metadata?: Record<string, unknown>;
 }) {
   await db.insert(authorityAuditLog).values({
-    actorUserId: input.actor?.id ?? null,
+    actorMemberId: input.actor?.id ?? null,
     actorEmail: input.actor?.email ?? null,
     authority: input.authority,
     action: input.action,
