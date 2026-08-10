@@ -24,6 +24,8 @@ export default defineConfig({
   out: "./migrations",
   schema: [
     "./shared/schema.ts",
+    "./shared/identity-schema.ts",
+    "./shared/resource-schema.ts",
     "./shared/learning-schema.ts",
     "./shared/operating-schema.ts",
   ],
