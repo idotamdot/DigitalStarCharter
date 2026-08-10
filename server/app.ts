@@ -2,7 +2,10 @@ import express, { type Express, type NextFunction, type Request, type Response }
 import { setupAuth } from "./auth";
 import { registerAccountingRoutes } from "./accounting-routes";
 import { registerLearningRoutes } from "./learning-routes";
+import { registerMemberRoutes } from "./member-routes";
 import { registerOperatingRoutes } from "./operating-routes";
+import { enforceQualityBeforeCompletion } from "./quality-completion-guard";
+import { registerQualityRoutes } from "./quality-routes";
 import { registerResourceRoutes } from "./resource-routes";
 import { log } from "./log";
 
@@ -29,9 +32,12 @@ export function createApp(): Express {
   });
 
   setupAuth(app);
+  registerMemberRoutes(app);
   registerResourceRoutes(app);
   registerLearningRoutes(app);
   registerAccountingRoutes(app);
+  registerQualityRoutes(app);
+  app.use(enforceQualityBeforeCompletion);
   registerOperatingRoutes(app);
 
   app.get("/api/health", (_req, res) => {
