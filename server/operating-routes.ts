@@ -1,11 +1,12 @@
 import type { Express } from "express";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "./db";
 import { requireAuth } from "./auth";
 import {
   getAccessSnapshot,
+  memberHasCapability,
   requireCapability,
-  userHasCapability,
   writeAuthorityAudit,
 } from "./access-control";
 import {
@@ -24,42 +25,143 @@ import {
   memberDistributions,
   roleAssignments,
   workOrders,
+  type OperatingDomain,
+  type WorkOrderStatus,
 } from "@shared/operating-schema";
-import { users } from "@shared/schema";
+import { members } from "@shared/identity-schema";
 
-const defaultRoles = [
-  ["Coordinator / Secretary", "people", "Owns scheduling, records, follow-through, communications, handoffs and organizational continuity.", "Protects billable time, prevents dropped commitments and coordinates human work."],
-  ["Sales & Partnerships", "work", "Finds aligned clients, partnerships and revenue opportunities without extractive sales practices.", "Owns qualified pipeline and closed revenue."],
-  ["Client Success", "work", "Turns commitments into excellent client experiences and repeat business.", "Owns retention, referrals and expansion revenue."],
-  ["Production / Delivery", "work", "Produces the goods, services and deliverables promised to customers.", "Owns direct fulfillment of revenue work."],
-  ["Quality Steward", "quality", "Maintains the non-negotiable quality bar and can stop substandard output from shipping.", "Protects reputation, retention and remediation cost."],
-  ["Finance Steward", "finance", "Maintains books, reconciliations, reserves and transparent financial reporting.", "Protects solvency and prepares distributions for human approval."],
-  ["Operations Steward", "work", "Improves throughput, procurement, capacity and internal systems.", "Reduces avoidable cost and increases delivery capacity."],
-  ["Growth Steward", "growth", "Models sustainable expansion and verifies that the network can support each proposed permanent member.", "Prevents growth from outrunning payroll and reserve capacity."],
-] as const;
+interface RoleSeed {
+  name: string;
+  domain: OperatingDomain;
+  description: string;
+  revenueResponsibility: string;
+}
 
-const memberWorkStatuses = new Set(["in_progress", "blocked", "completed"]);
-const stewardWorkStatuses = new Set(["planned", "assigned", "in_progress", "blocked", "completed", "cancelled"]);
+const defaultRoles: readonly RoleSeed[] = [
+  {
+    name: "Coordinator / Secretary",
+    domain: "people",
+    description: "Owns scheduling, records, follow-through, communications, handoffs and organizational continuity.",
+    revenueResponsibility: "Protects billable time, prevents dropped commitments and coordinates human work.",
+  },
+  {
+    name: "Sales & Partnerships",
+    domain: "work",
+    description: "Finds aligned clients, partnerships and revenue opportunities without extractive sales practices.",
+    revenueResponsibility: "Owns qualified pipeline and closed revenue.",
+  },
+  {
+    name: "Client Success",
+    domain: "work",
+    description: "Turns commitments into excellent client experiences and repeat business.",
+    revenueResponsibility: "Owns retention, referrals and expansion revenue.",
+  },
+  {
+    name: "Production / Delivery",
+    domain: "work",
+    description: "Produces the goods, services and deliverables promised to customers.",
+    revenueResponsibility: "Owns direct fulfillment of revenue work.",
+  },
+  {
+    name: "Quality Steward",
+    domain: "quality",
+    description: "Maintains the non-negotiable quality bar and can stop substandard output from shipping.",
+    revenueResponsibility: "Protects reputation, retention and remediation cost.",
+  },
+  {
+    name: "Finance Steward",
+    domain: "finance",
+    description: "Maintains books, reconciliations, reserves and transparent financial reporting.",
+    revenueResponsibility: "Protects solvency and prepares distributions for human approval.",
+  },
+  {
+    name: "Operations Steward",
+    domain: "work",
+    description: "Improves throughput, procurement, capacity and internal systems.",
+    revenueResponsibility: "Reduces avoidable cost and increases delivery capacity.",
+  },
+  {
+    name: "Growth Steward",
+    domain: "growth",
+    description: "Models sustainable expansion and verifies that the network can support each proposed permanent member.",
+    revenueResponsibility: "Prevents growth from outrunning payroll and reserve capacity.",
+  },
+];
+
+const roleUpdateSchema = insertCharterRoleSchema.partial().extend({
+  reason: z.string().trim().min(1).optional(),
+});
+
+const assignmentStatusSchema = z.object({
+  status: z.enum(["active", "paused", "ended"]),
+  notes: z.string().nullable().optional(),
+  reason: z.string().trim().min(1).optional(),
+});
+
+const workStatusSchema = z.object({
+  status: z.enum(["planned", "ready", "in_progress", "blocked", "human_review", "completed", "cancelled"]),
+  actualRevenueCents: z.number().int().nonnegative().optional(),
+});
+
+const distributionCalculationSchema = z.object({
+  name: z.string().trim().min(1).optional(),
+  periodStart: z.coerce.date(),
+  periodEnd: z.coerce.date(),
+  reserveRate: z.number().min(0).max(1).default(0.2),
+});
+
+const distributionReviewSchema = z.object({
+  status: z.enum(["approved", "rejected"]),
+  reason: z.string().trim().min(1).optional(),
+});
+
+const growthReviewSchema = z.object({
+  status: z.enum(["approved", "rejected"]),
+  reason: z.string().trim().min(1).optional(),
+  overrideUnsafe: z.boolean().default(false),
+});
+
+const aiReviewSchema = z.object({
+  status: z.enum(["approved", "modified", "rejected"]),
+  reviewNotes: z.string().nullable().optional(),
+});
+
+const executeSchema = z.object({
+  reason: z.string().trim().min(1).optional(),
+});
+
+const memberWorkStatuses = new Set<WorkOrderStatus>(["in_progress", "blocked", "human_review", "completed"]);
+const stewardWorkStatuses = new Set<WorkOrderStatus>([
+  "planned",
+  "ready",
+  "in_progress",
+  "blocked",
+  "human_review",
+  "completed",
+  "cancelled",
+]);
 
 export function registerOperatingRoutes(app: Express) {
   app.post("/api/operating/bootstrap", requireAuth, requireCapability("admin"), async (req, res) => {
     const existing = await db.select().from(charterRoles).limit(1);
     if (existing.length === 0) {
-      await db.insert(charterRoles).values(defaultRoles.map(([name, domain, description, revenueResponsibility]) => ({
-        name,
-        domain,
-        description,
-        revenueResponsibility,
+      await db.insert(charterRoles).values(defaultRoles.map((role) => ({
+        ...role,
         humanAuthority: true,
         active: true,
       })));
-      await writeAuthorityAudit({ actor: req.user, authority: "admin", action: "bootstrap_roles", targetType: "charter_roles" });
+      await writeAuthorityAudit({
+        actor: req.member,
+        authority: "admin",
+        action: "bootstrap_roles",
+        targetType: "charter_roles",
+      });
     }
     res.json({ ok: true });
   });
 
   app.get("/api/operating/summary", requireAuth, async (req, res) => {
-    const access = await getAccessSnapshot(req.user!);
+    const access = await getAccessSnapshot(req.member!);
     const [roles, assignments, work, ledger, growth, decisions, people, distributions] = await Promise.all([
       db.select().from(charterRoles).orderBy(charterRoles.id),
       db.select().from(roleAssignments).orderBy(desc(roleAssignments.assignedAt)),
@@ -67,7 +169,7 @@ export function registerOperatingRoutes(app: Express) {
       db.select().from(ledgerEntries).orderBy(desc(ledgerEntries.occurredAt)).limit(100),
       db.select().from(growthPlans).orderBy(desc(growthPlans.createdAt)).limit(20),
       db.select().from(aiDecisions).orderBy(desc(aiDecisions.createdAt)).limit(50),
-      db.select({ id: users.id, fullName: users.fullName, email: users.email }).from(users),
+      db.select({ id: members.id, displayName: members.displayName, email: members.email }).from(members),
       db.select().from(distributionPeriods).orderBy(desc(distributionPeriods.createdAt)).limit(20),
     ]);
 
@@ -87,7 +189,9 @@ export function registerOperatingRoutes(app: Express) {
       growth,
       decisions,
       distributions,
-      people: people.map((person) => access.isAdmin ? person : ({ id: person.id, fullName: person.fullName })),
+      people: people.map((person) => access.isAdmin
+        ? person
+        : { id: person.id, displayName: person.displayName }),
       totals,
     });
   });
@@ -100,101 +204,165 @@ export function registerOperatingRoutes(app: Express) {
   app.post("/api/operating/roles", requireAuth, requireCapability("admin"), async (req, res) => {
     const input = insertCharterRoleSchema.parse(req.body);
     const [created] = await db.insert(charterRoles).values(input).returning();
-    await writeAuthorityAudit({ actor: req.user, authority: "admin", action: "create_role", targetType: "charter_role", targetId: created.id });
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "admin",
+      action: "create_role",
+      targetType: "charter_role",
+      targetId: created.id,
+    });
     res.status(201).json(created);
   });
 
   app.patch("/api/operating/roles/:id", requireAuth, requireCapability("admin"), async (req, res) => {
     const id = Number(req.params.id);
-    const allowed = (({ name, domain, description, revenueResponsibility, humanAuthority, active }) => ({
-      name, domain, description, revenueResponsibility, humanAuthority, active,
-    }))(req.body);
-    const [updated] = await db.update(charterRoles).set(allowed).where(eq(charterRoles.id, id)).returning();
+    const { reason, ...changes } = roleUpdateSchema.parse(req.body);
+    const [updated] = await db.update(charterRoles).set(changes).where(eq(charterRoles.id, id)).returning();
     if (!updated) return res.status(404).json({ message: "Role not found" });
-    await writeAuthorityAudit({ actor: req.user, authority: "admin", action: "update_role", targetType: "charter_role", targetId: id, reason: req.body.reason });
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "admin",
+      action: "update_role",
+      targetType: "charter_role",
+      targetId: id,
+      reason,
+    });
     res.json(updated);
   });
 
   app.post("/api/operating/assignments", requireAuth, requireCapability("roles.assign"), async (req, res) => {
     const input = insertRoleAssignmentSchema.parse(req.body);
     const [created] = await db.insert(roleAssignments).values(input).returning();
-    await writeAuthorityAudit({ actor: req.user, authority: "roles.assign", action: "assign_role", targetType: "role_assignment", targetId: created.id, reason: req.body.reason });
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "roles.assign",
+      action: "assign_role",
+      targetType: "role_assignment",
+      targetId: created.id,
+    });
     res.status(201).json(created);
   });
 
   app.patch("/api/operating/assignments/:id/status", requireAuth, requireCapability("roles.assign"), async (req, res) => {
     const id = Number(req.params.id);
-    const status = String(req.body.status || "");
-    if (!["active", "inactive", "transitioning"].includes(status)) return res.status(400).json({ message: "Invalid assignment status" });
-    const [updated] = await db.update(roleAssignments).set({ status, notes: req.body.notes ?? undefined }).where(eq(roleAssignments.id, id)).returning();
+    const input = assignmentStatusSchema.parse(req.body);
+    const [updated] = await db.update(roleAssignments).set({
+      status: input.status,
+      notes: input.notes,
+    }).where(eq(roleAssignments.id, id)).returning();
     if (!updated) return res.status(404).json({ message: "Assignment not found" });
-    await writeAuthorityAudit({ actor: req.user, authority: "roles.assign", action: "change_assignment_status", targetType: "role_assignment", targetId: id, reason: req.body.reason, metadata: { status } });
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "roles.assign",
+      action: "change_assignment_status",
+      targetType: "role_assignment",
+      targetId: id,
+      reason: input.reason,
+      metadata: { status: input.status },
+    });
     res.json(updated);
   });
 
   app.post("/api/operating/work", requireAuth, requireCapability("work.create"), async (req, res) => {
-    const requestedAssignee = req.body.assignedUserId == null ? null : Number(req.body.assignedUserId);
-    if (requestedAssignee && requestedAssignee !== req.user!.id && !(await userHasCapability(req.user!, "work.assign"))) {
-      return res.status(403).json({ message: "Work steward authority is required to assign work to another person" });
+    const requestedAssignee = req.body && typeof req.body === "object" && "assignedMemberId" in req.body
+      ? Number((req.body as Record<string, unknown>).assignedMemberId)
+      : null;
+
+    if (requestedAssignee && requestedAssignee !== req.member!.id && !(await memberHasCapability(req.member!, "work.assign"))) {
+      return res.status(403).json({ message: "Work steward authority is required to assign work to another member" });
     }
-    const input = insertWorkOrderSchema.parse({ ...req.body, createdByUserId: req.user!.id });
+
+    const input = insertWorkOrderSchema.parse({
+      ...req.body,
+      createdByMemberId: req.member!.id,
+    });
     const [created] = await db.insert(workOrders).values(input).returning();
-    await writeAuthorityAudit({ actor: req.user, authority: "work.create", action: "create_work_order", targetType: "work_order", targetId: created.id });
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "work.create",
+      action: "create_work_order",
+      targetType: "work_order",
+      targetId: created.id,
+    });
     res.status(201).json(created);
   });
 
   app.patch("/api/operating/work/:id/status", requireAuth, async (req, res) => {
     const id = Number(req.params.id);
+    const input = workStatusSchema.parse(req.body);
     const [work] = await db.select().from(workOrders).where(eq(workOrders.id, id)).limit(1);
     if (!work) return res.status(404).json({ message: "Work order not found" });
 
-    const canManageAny = await userHasCapability(req.user!, "work.assign");
-    const isAssignee = work.assignedUserId === req.user!.id;
-    if (!canManageAny && !isAssignee) return res.status(403).json({ message: "You may only update work assigned to you" });
+    const canManageAny = await memberHasCapability(req.member!, "work.assign");
+    const isAssignee = work.assignedMemberId === req.member!.id;
+    if (!canManageAny && !isAssignee) {
+      return res.status(403).json({ message: "You may only update work assigned to you" });
+    }
 
-    const status = String(req.body.status || "");
     const allowedStatuses = canManageAny ? stewardWorkStatuses : memberWorkStatuses;
-    if (!allowedStatuses.has(status)) return res.status(400).json({ message: "Invalid work status for your authority" });
+    if (!allowedStatuses.has(input.status)) {
+      return res.status(400).json({ message: "Invalid work status for your authority" });
+    }
 
-    const completedAt = status === "completed" ? new Date() : status === "planned" || status === "assigned" ? null : work.completedAt;
+    const completedAt = input.status === "completed"
+      ? new Date()
+      : input.status === "planned" || input.status === "ready"
+        ? null
+        : work.completedAt;
+
     const [updated] = await db.update(workOrders).set({
-      status,
+      status: input.status,
       completedAt,
-      actualRevenueCents: req.body.actualRevenueCents == null ? work.actualRevenueCents : Number(req.body.actualRevenueCents),
+      actualRevenueCents: input.actualRevenueCents ?? work.actualRevenueCents,
     }).where(eq(workOrders.id, id)).returning();
-    await writeAuthorityAudit({ actor: req.user, authority: canManageAny ? "work.assign" : "member", action: "update_work_status", targetType: "work_order", targetId: id, metadata: { status } });
+
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: canManageAny ? "work.assign" : "member",
+      action: "update_work_status",
+      targetType: "work_order",
+      targetId: id,
+      metadata: { status: input.status },
+    });
     res.json(updated);
   });
 
   app.post("/api/operating/ledger", requireAuth, requireCapability("finance.record"), async (req, res) => {
-    const input = insertLedgerEntrySchema.parse({ ...req.body, recordedByUserId: req.user!.id });
+    const input = insertLedgerEntrySchema.parse({
+      ...req.body,
+      recordedByMemberId: req.member!.id,
+    });
     const [created] = await db.insert(ledgerEntries).values(input).returning();
-    await writeAuthorityAudit({ actor: req.user, authority: "finance.record", action: "record_ledger_entry", targetType: "ledger_entry", targetId: created.id, reason: req.body.reason });
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "finance.record",
+      action: "record_ledger_entry",
+      targetType: "ledger_entry",
+      targetId: created.id,
+    });
     res.status(201).json(created);
   });
 
   app.post("/api/operating/distributions/calculate", requireAuth, requireCapability("finance.record"), async (req, res) => {
-    const periodStart = new Date(req.body.periodStart);
-    const periodEnd = new Date(req.body.periodEnd);
-    if (!Number.isFinite(periodStart.getTime()) || !Number.isFinite(periodEnd.getTime()) || periodStart >= periodEnd) {
-      return res.status(400).json({ message: "A valid distribution period is required" });
+    const input = distributionCalculationSchema.parse(req.body);
+    if (input.periodStart >= input.periodEnd) {
+      return res.status(400).json({ message: "Distribution period end must be after its start" });
     }
 
-    const reserveRate = Math.min(1, Math.max(0, Number(req.body.reserveRate ?? 0.2)));
     const entries = await db.select().from(ledgerEntries).where(and(
-      gte(ledgerEntries.occurredAt, periodStart),
-      lte(ledgerEntries.occurredAt, periodEnd),
+      gte(ledgerEntries.occurredAt, input.periodStart),
+      lte(ledgerEntries.occurredAt, input.periodEnd),
     ));
     const revenueCents = entries.filter((entry) => entry.type === "income").reduce((n, entry) => n + entry.amountCents, 0);
     const operatingCostsCents = entries.filter((entry) => entry.type === "expense").reduce((n, entry) => n + entry.amountCents, 0);
     const surplus = Math.max(0, revenueCents - operatingCostsCents);
-    const reserveContributionCents = Math.round(surplus * reserveRate);
+    const reserveContributionCents = Math.round(surplus * input.reserveRate);
     const distributableCents = Math.max(0, surplus - reserveContributionCents);
 
     const [period] = await db.insert(distributionPeriods).values({
-      name: String(req.body.name || `${periodStart.toISOString().slice(0, 10)} distribution`),
-      periodStart,
-      periodEnd,
+      name: input.name ?? `${input.periodStart.toISOString().slice(0, 10)} distribution`,
+      periodStart: input.periodStart,
+      periodEnd: input.periodEnd,
       revenueCents,
       operatingCostsCents,
       reserveContributionCents,
@@ -202,35 +370,53 @@ export function registerOperatingRoutes(app: Express) {
       status: "human_review",
     }).returning();
 
-    const activeMembers = await db.select({ userId: roleAssignments.userId }).from(roleAssignments).where(eq(roleAssignments.status, "active"));
-    const uniqueUserIds = [...new Set(activeMembers.map((member) => member.userId))];
-    if (uniqueUserIds.length > 0 && distributableCents > 0) {
-      const equalShare = Math.floor(distributableCents / uniqueUserIds.length);
-      await db.insert(memberDistributions).values(uniqueUserIds.map((userId) => ({
+    const activeMembers = await db.select({ memberId: roleAssignments.memberId })
+      .from(roleAssignments)
+      .where(eq(roleAssignments.status, "active"));
+    const uniqueMemberIds = [...new Set(activeMembers.map((member) => member.memberId))];
+
+    if (uniqueMemberIds.length > 0 && distributableCents > 0) {
+      const equalShare = Math.floor(distributableCents / uniqueMemberIds.length);
+      await db.insert(memberDistributions).values(uniqueMemberIds.map((memberId) => ({
         periodId: period.id,
-        userId,
+        memberId,
         amountCents: equalShare,
         basis: "equal_share",
         status: "proposed",
       })));
     }
 
-    await writeAuthorityAudit({ actor: req.user, authority: "finance.record", action: "calculate_distribution", targetType: "distribution_period", targetId: period.id, metadata: { reserveRate, distributableCents } });
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "finance.record",
+      action: "calculate_distribution",
+      targetType: "distribution_period",
+      targetId: period.id,
+      metadata: { reserveRate: input.reserveRate, distributableCents },
+    });
     res.status(201).json(period);
   });
 
   app.post("/api/operating/distributions/:id/review", requireAuth, requireCapability("finance.distribute"), async (req, res) => {
     const id = Number(req.params.id);
-    const status = String(req.body.status || "rejected");
-    if (!["approved", "rejected"].includes(status)) return res.status(400).json({ message: "Invalid distribution review status" });
+    const input = distributionReviewSchema.parse(req.body);
     const [updated] = await db.update(distributionPeriods).set({
-      status,
-      approvedByUserId: status === "approved" ? req.user!.id : null,
-      approvedAt: status === "approved" ? new Date() : null,
+      status: input.status,
+      approvedByMemberId: input.status === "approved" ? req.member!.id : null,
+      approvedAt: input.status === "approved" ? new Date() : null,
     }).where(eq(distributionPeriods.id, id)).returning();
     if (!updated) return res.status(404).json({ message: "Distribution period not found" });
-    await db.update(memberDistributions).set({ status }).where(eq(memberDistributions.periodId, id));
-    await writeAuthorityAudit({ actor: req.user, authority: "finance.distribute", action: "review_distribution", targetType: "distribution_period", targetId: id, reason: req.body.reason, metadata: { status } });
+
+    await db.update(memberDistributions).set({ status: input.status }).where(eq(memberDistributions.periodId, id));
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "finance.distribute",
+      action: "review_distribution",
+      targetType: "distribution_period",
+      targetId: id,
+      reason: input.reason,
+      metadata: { status: input.status },
+    });
     res.json(updated);
   });
 
@@ -252,22 +438,54 @@ export function registerOperatingRoutes(app: Express) {
         "The plan remains advisory until a human administrator approves it",
       ],
     };
-    const [created] = await db.insert(growthPlans).values({ ...input, safeToAdd, analysis, status: "human_review" }).returning();
-    await writeAuthorityAudit({ actor: req.user, authority: "growth.evaluate", action: "evaluate_growth", targetType: "growth_plan", targetId: created.id, metadata: { safeToAdd } });
+    const [created] = await db.insert(growthPlans).values({
+      ...input,
+      safeToAdd,
+      analysis,
+      status: "human_review",
+    }).returning();
+
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "growth.evaluate",
+      action: "evaluate_growth",
+      targetType: "growth_plan",
+      targetId: created.id,
+      metadata: { safeToAdd },
+    });
     res.status(201).json(created);
   });
 
   app.post("/api/operating/growth/:id/review", requireAuth, requireCapability("growth.approve"), async (req, res) => {
     const id = Number(req.params.id);
-    const status = String(req.body.status || "rejected");
-    if (!["approved", "rejected", "deferred"].includes(status)) return res.status(400).json({ message: "Invalid growth review status" });
+    const input = growthReviewSchema.parse(req.body);
+    const [plan] = await db.select().from(growthPlans).where(eq(growthPlans.id, id)).limit(1);
+    if (!plan) return res.status(404).json({ message: "Growth plan not found" });
+
+    if (input.status === "approved" && !plan.safeToAdd && !input.overrideUnsafe) {
+      return res.status(409).json({
+        message: "This growth plan fails the financial safety gate. Explicit administrator override is required.",
+      });
+    }
+    if (input.status === "approved" && !plan.safeToAdd && input.overrideUnsafe && !input.reason) {
+      return res.status(400).json({ message: "An override reason is required for an unsafe growth approval" });
+    }
+
     const [updated] = await db.update(growthPlans).set({
-      status,
-      approvedByUserId: status === "approved" ? req.user!.id : null,
-      approvedAt: status === "approved" ? new Date() : null,
+      status: input.status,
+      approvedByMemberId: input.status === "approved" ? req.member!.id : null,
+      approvedAt: input.status === "approved" ? new Date() : null,
     }).where(eq(growthPlans.id, id)).returning();
-    if (!updated) return res.status(404).json({ message: "Growth plan not found" });
-    await writeAuthorityAudit({ actor: req.user, authority: "growth.approve", action: "review_growth", targetType: "growth_plan", targetId: id, reason: req.body.reason, metadata: { status, safeToAdd: updated.safeToAdd } });
+
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "growth.approve",
+      action: input.overrideUnsafe ? "override_growth_safety_gate" : "review_growth",
+      targetType: "growth_plan",
+      targetId: id,
+      reason: input.reason,
+      metadata: { status: input.status, safeToAdd: plan.safeToAdd, overrideUnsafe: input.overrideUnsafe },
+    });
     res.json(updated);
   });
 
@@ -275,39 +493,65 @@ export function registerOperatingRoutes(app: Express) {
     const input = insertAiDecisionSchema.parse({
       ...req.body,
       status: "human_review",
-      proposedBy: `human:${req.user!.email}`,
+      proposedBy: `human:${req.member!.email}`,
     });
     const [created] = await db.insert(aiDecisions).values(input).returning();
-    await writeAuthorityAudit({ actor: req.user, authority: "ai.propose", action: "submit_management_proposal", targetType: "ai_decision", targetId: created.id });
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "ai.propose",
+      action: "submit_management_proposal",
+      targetType: "ai_decision",
+      targetId: created.id,
+    });
     res.status(201).json(created);
   });
 
   app.post("/api/operating/ai-decisions/:id/review", requireAuth, requireCapability("ai.review"), async (req, res) => {
     const id = Number(req.params.id);
-    const status = String(req.body.status || "rejected");
-    if (!["approved", "modified", "rejected"].includes(status)) return res.status(400).json({ message: "Invalid review status" });
+    const input = aiReviewSchema.parse(req.body);
     const [updated] = await db.update(aiDecisions).set({
-      status,
-      reviewedByUserId: req.user!.id,
+      status: input.status,
+      reviewedByMemberId: req.member!.id,
       reviewedAt: new Date(),
-      reviewNotes: req.body.reviewNotes ? String(req.body.reviewNotes) : null,
+      reviewNotes: input.reviewNotes ?? null,
     }).where(eq(aiDecisions.id, id)).returning();
     if (!updated) return res.status(404).json({ message: "Decision not found" });
-    await writeAuthorityAudit({ actor: req.user, authority: "ai.review", action: "review_management_proposal", targetType: "ai_decision", targetId: id, reason: req.body.reviewNotes, metadata: { status } });
+
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "ai.review",
+      action: "review_management_proposal",
+      targetType: "ai_decision",
+      targetId: id,
+      reason: input.reviewNotes,
+      metadata: { status: input.status },
+    });
     res.json(updated);
   });
 
   app.post("/api/operating/ai-decisions/:id/execute", requireAuth, requireCapability("ai.execute"), async (req, res) => {
     const id = Number(req.params.id);
+    const input = executeSchema.parse(req.body ?? {});
     const [decision] = await db.select().from(aiDecisions).where(eq(aiDecisions.id, id)).limit(1);
     if (!decision) return res.status(404).json({ message: "Decision not found" });
-    if (!["approved", "modified"].includes(decision.status)) return res.status(409).json({ message: "Only a human-approved proposal may be marked executed" });
+    if (!["approved", "modified"].includes(decision.status)) {
+      return res.status(409).json({ message: "Only a human-approved proposal may be executed" });
+    }
+
     const [updated] = await db.update(aiDecisions).set({
       status: "executed",
-      executedByUserId: req.user!.id,
+      executedByMemberId: req.member!.id,
       executedAt: new Date(),
     }).where(eq(aiDecisions.id, id)).returning();
-    await writeAuthorityAudit({ actor: req.user, authority: "ai.execute", action: "execute_approved_proposal", targetType: "ai_decision", targetId: id, reason: req.body.reason });
+
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "ai.execute",
+      action: "execute_approved_proposal",
+      targetType: "ai_decision",
+      targetId: id,
+      reason: input.reason,
+    });
     res.json(updated);
   });
 }
