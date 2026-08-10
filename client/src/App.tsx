@@ -25,6 +25,7 @@ import LearningPaths from "@/pages/LearningPaths";
 import LearningPathDetail from "@/pages/LearningPathDetail";
 import AuthPage from "@/pages/auth-page";
 import OperationsConsole from "@/pages/OperationsConsole";
+import AdminConsole from "@/pages/AdminConsole";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/join" component={JoinConstellation} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/operations" component={OperationsConsole} />
+      <ProtectedRoute path="/admin" component={AdminConsole} />
       <ProtectedRoute path="/business-wizard" component={BusinessWizard} />
       <ProtectedRoute path="/brand-questionnaire" component={BrandQuestionnaire} />
       <ProtectedRoute path="/social-media-plan" component={SocialMediaPlan} />
