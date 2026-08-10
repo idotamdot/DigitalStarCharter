@@ -3,7 +3,6 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { verifyNeonJwt } from "./neon-auth";
 import { getAccessSnapshot, isConfiguredAdmin } from "./access-control";
-import { enforceGlobalAuthorization } from "./global-policy";
 import { members, memberProfiles, type Member } from "@shared/identity-schema";
 
 declare global {
@@ -102,8 +101,6 @@ export function setupAuth(app: Express) {
     }
     next();
   });
-
-  app.use(enforceGlobalAuthorization);
 
   app.get("/api/member", requireAuth, (req, res) => {
     res.json(req.member);
