@@ -9,8 +9,6 @@ const localEnvFile = existsSync(".env.local")
     : undefined;
 
 if (localEnvFile) {
-  // Drizzle CLI is a local development/admin command. When a local env file
-  // exists, make it authoritative so stale shell variables cannot override it.
   delete process.env.NEON_DATABASE_URL;
   delete process.env.DATABASE_URL;
   loadEnvFile(localEnvFile);
@@ -24,7 +22,11 @@ if (!connectionString) {
 
 export default defineConfig({
   out: "./migrations",
-  schema: ["./shared/schema.ts", "./shared/operating-schema.ts"],
+  schema: [
+    "./shared/schema.ts",
+    "./shared/learning-schema.ts",
+    "./shared/operating-schema.ts",
+  ],
   dialect: "postgresql",
   dbCredentials: {
     url: connectionString,
