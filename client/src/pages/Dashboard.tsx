@@ -1,217 +1,140 @@
-import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { BookOpen, BriefcaseBusiness, GraduationCap, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import ProgressTracker from "@/components/dashboard/ProgressTracker";
-import ActionItems from "@/components/dashboard/ActionItems";
-import AccessibilityMenu from "@/components/dashboard/AccessibilityMenu";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/hooks/use-auth";
+import type { LearningEnrollmentApi } from "@shared/learning";
+import type { OperatingSummaryApi } from "@shared/operating-api";
 
-const Dashboard = () => {
-  const [location, navigate] = useLocation();
-  const { toast } = useToast();
+const money = (cents: number) => new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+}).format(cents / 100);
 
-  // Check if user is logged in
-  const { data: user, isLoading: userLoading } = useQuery({
-    queryKey: ["/api/users/me"],
-    retry: false,
-  });
+export default function Dashboard() {
+  const { member } = useAuth();
+  const summaryQuery = useQuery<OperatingSummaryApi>({ queryKey: ["/api/operating/summary"] });
+  const learningQuery = useQuery<LearningEnrollmentApi[]>({ queryKey: ["/api/member/enrollments"] });
 
-  // Fetch business profile
-  const { data: businessProfile, isLoading: profileLoading } = useQuery({
-    queryKey: ["/api/business-profiles/me"],
-    enabled: !!user,
-    retry: false,
-  });
+  if (!member) return null;
 
-  // Fetch subscription
-  const { data: subscription, isLoading: subscriptionLoading } = useQuery({
-    queryKey: ["/api/subscriptions/me"],
-    enabled: !!businessProfile,
-    retry: false,
-  });
-
-  // Redirect if not logged in
-  useEffect(() => {
-    if (!userLoading && !user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to access the dashboard",
-        variant: "destructive",
-      });
-      navigate("/");
-    }
-  }, [user, userLoading, navigate, toast]);
-
-  if (userLoading || !user) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  const summary = summaryQuery.data;
+  const assignments = summary?.assignments.filter((assignment) => assignment.memberId === member.id && assignment.status === "active") ?? [];
+  const roleById = new Map((summary?.roles ?? []).map((role) => [role.id, role]));
+  const assignedWork = summary?.work.filter((work) => work.assignedMemberId === member.id && work.status !== "completed" && work.status !== "cancelled") ?? [];
+  const activeLearning = (learningQuery.data ?? []).filter((enrollment) => enrollment.isActive && !enrollment.completedAt);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-[#070b18] text-white">
       <Navbar />
-      <main className="flex-grow py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome, {user?.fullName}</h1>
-            <p className="text-gray-600 mt-2">
-              Manage your business development journey
-            </p>
-          </div>
+      <main className="mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 lg:px-8">
+        <header className="mb-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Member home</p>
+          <h1 className="mt-2 text-4xl font-bold">Welcome, {member.displayName}</h1>
+          <p className="mt-3 max-w-3xl text-lg text-slate-300">
+            Your work, learning, role mobility and shared operating picture live here. The system is designed to help people flourish while keeping growth financially sustainable.
+          </p>
+        </header>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl">Business Profile</CardTitle>
-                <CardDescription>Your business information</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {profileLoading ? (
-                  <div className="py-8 flex justify-center">
-                    <div className="w-6 h-6 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                ) : businessProfile ? (
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-medium">Business Name</h3>
-                      <p>{businessProfile.businessName}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Industry</h3>
-                      <p>{businessProfile.industry || "Not specified"}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Stage</h3>
-                      <p>{businessProfile.stage || "Not specified"}</p>
-                    </div>
-                    <Button 
-                      variant="outline"
-                      onClick={() => navigate("/business-wizard")}
-                      className="w-full"
-                    >
-                      Edit Business Profile
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-gray-500 mb-4">
-                      You haven't created your business profile yet
-                    </p>
-                    <Button 
-                      onClick={() => navigate("/business-wizard")}
-                    >
-                      Create Business Profile
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+        <section className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <Metric icon={<BriefcaseBusiness className="h-5 w-5" />} label="Active work" value={String(assignedWork.length)} />
+          <Metric icon={<GraduationCap className="h-5 w-5" />} label="Learning paths" value={String(activeLearning.length)} />
+          <Metric icon={<WalletCards className="h-5 w-5" />} label="Recorded network income" value={money(summary?.totals.incomeCents ?? 0)} />
+          <Metric icon={<ShieldCheck className="h-5 w-5" />} label="Your authority domains" value={String(summary?.access.domains.length ?? 0)} />
+        </section>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl">Subscription</CardTitle>
-                <CardDescription>Your current service tier</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {subscriptionLoading ? (
-                  <div className="py-8 flex justify-center">
-                    <div className="w-6 h-6 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                ) : subscription ? (
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-medium">Current Plan</h3>
-                      <p className="capitalize">{subscription.tier}</p>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="border-slate-800 bg-slate-900/55">
+            <CardHeader>
+              <CardTitle>Your roles</CardTitle>
+              <CardDescription>Roles describe responsibility and authority, not human worth.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {assignments.length === 0 ? (
+                <p className="text-sm text-slate-400">No operating role has been assigned yet.</p>
+              ) : assignments.map((assignment) => {
+                const role = roleById.get(assignment.roleId);
+                return (
+                  <div key={assignment.id} className="rounded-lg border border-slate-800 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <strong>{role?.name ?? "Role"}</strong>
+                      <Badge variant="outline" className="capitalize">{role?.domain ?? "member"}</Badge>
                     </div>
-                    <div>
-                      <h3 className="font-medium">Status</h3>
-                      <p>{subscription.isActive ? "Active" : "Inactive"}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Start Date</h3>
-                      <p>{new Date(subscription.startDate).toLocaleDateString()}</p>
-                    </div>
-                    <Button 
-                      variant="outline"
-                      onClick={() => navigate("/service-selection")}
-                      className="w-full"
-                    >
-                      Manage Subscription
-                    </Button>
+                    {role?.description && <p className="mt-2 text-sm text-slate-400">{role.description}</p>}
                   </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-gray-500 mb-4">
-                      You don't have an active subscription
-                    </p>
-                    <Button 
-                      onClick={() => navigate("/service-selection")}
-                    >
-                      Choose a Plan
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                );
+              })}
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl">Resources</CardTitle>
-                <CardDescription>Business development tools</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate("/brand-questionnaire")}
-                  >
-                    Brand Development
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate("/social-media-plan")}
-                  >
-                    Social Media Planning
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate("/resources")}
-                  >
-                    Resource Library
-                  </Button>
+          <Card className="border-slate-800 bg-slate-900/55">
+            <CardHeader>
+              <CardTitle>Work in your hands</CardTitle>
+              <CardDescription>Only work currently assigned to you appears here.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {assignedWork.length === 0 ? (
+                <p className="text-sm text-slate-400">You have no active work orders.</p>
+              ) : assignedWork.slice(0, 6).map((work) => (
+                <div key={work.id} className="rounded-lg border border-slate-800 p-4">
+                  <div className="flex items-center justify-between gap-3"><strong>{work.title}</strong><Badge className="capitalize">{work.status.replaceAll("_", " ")}</Badge></div>
+                  <p className="mt-2 text-sm text-slate-400">{work.description}</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              ))}
+              <Button asChild variant="outline" className="w-full"><Link href="/operations">Open operating system</Link></Button>
+            </CardContent>
+          </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <ProgressTracker businessProfile={businessProfile} />
-            <ActionItems businessProfile={businessProfile} />
-          </div>
+          <Card className="border-slate-800 bg-slate-900/55">
+            <CardHeader>
+              <CardTitle>Learning & role mobility</CardTitle>
+              <CardDescription>Build capability for new work before role changes become necessary.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {activeLearning.length === 0 ? (
+                <div className="text-center py-6"><Sparkles className="mx-auto mb-3 h-7 w-7 text-violet-300" /><p className="text-sm text-slate-400">No active learning path.</p></div>
+              ) : activeLearning.slice(0, 4).map((enrollment) => (
+                <div key={enrollment.id}>
+                  <div className="mb-2 flex justify-between gap-3 text-sm"><span>{enrollment.path?.title ?? "Learning path"}</span><span className="text-slate-400">{enrollment.progressPercent}%</span></div>
+                  <Progress value={enrollment.progressPercent} />
+                </div>
+              ))}
+              <Button asChild variant="outline" className="w-full"><Link href="/learning-paths"><BookOpen className="mr-2 h-4 w-4" /> Explore learning</Link></Button>
+            </CardContent>
+          </Card>
 
-          <div className="mt-8">
-            <AccessibilityMenu />
-          </div>
+          <Card className="border-slate-800 bg-slate-900/55">
+            <CardHeader>
+              <CardTitle>Human-in-the-loop authority</CardTitle>
+              <CardDescription>Your current server-enforced capability snapshot.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {(summary?.access.capabilities ?? []).map((capability) => <Badge key={capability} variant="outline">{capability}</Badge>)}
+                {(summary?.access.capabilities.length ?? 0) === 0 && <p className="text-sm text-slate-400">No steward capabilities assigned. Ordinary member actions remain available.</p>}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
       <Footer />
     </div>
   );
-};
+}
 
-export default Dashboard;
+function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <Card className="border-slate-800 bg-slate-900/55">
+      <CardContent className="p-5">
+        <div className="mb-3 flex items-center gap-2 text-slate-400">{icon}<span className="text-sm">{label}</span></div>
+        <div className="text-2xl font-bold">{value}</div>
+      </CardContent>
+    </Card>
+  );
+}
