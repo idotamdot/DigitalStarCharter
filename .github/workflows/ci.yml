@@ -1,0 +1,29 @@
+name: DigitalStarCharter CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Use pnpm 10.10.0
+        run: corepack prepare pnpm@10.10.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Strict TypeScript check
+        run: pnpm run check
+
+      - name: Production build
+        run: pnpm run build
