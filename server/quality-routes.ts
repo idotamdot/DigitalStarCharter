@@ -11,55 +11,19 @@ import {
   qualityStandards,
 } from "@shared/quality-schema";
 import { workOrders } from "@shared/operating-schema";
-import { evaluateWorkQualityGate } from "./quality-service";
-
-const defaultQualityStandards = [
-  {
-    name: "Requirements fulfilled",
-    description: "The delivered work satisfies the agreed scope, acceptance criteria and promised outcome.",
-    appliesToRevenueType: null,
-    releaseBlocking: true,
-    active: true,
-  },
-  {
-    name: "Accuracy and completeness",
-    description: "Claims, calculations, content and deliverables have been checked for material errors, omissions and unfinished work.",
-    appliesToRevenueType: null,
-    releaseBlocking: true,
-    active: true,
-  },
-  {
-    name: "Privacy and safety obligations",
-    description: "The work does not expose protected information or bypass applicable safety, security or consent obligations.",
-    appliesToRevenueType: null,
-    releaseBlocking: true,
-    active: true,
-  },
-  {
-    name: "Usability and presentation",
-    description: "The finished work is understandable, usable and presented at the quality level the network is willing to stand behind.",
-    appliesToRevenueType: null,
-    releaseBlocking: true,
-    active: true,
-  },
-] as const;
+import { ensureDefaultQualityStandards, evaluateWorkQualityGate } from "./quality-service";
 
 export function registerQualityRoutes(app: Express) {
   app.post("/api/quality/bootstrap", requireAuth, requireCapability("admin"), async (req, res) => {
-    const existing = await db.select().from(qualityStandards).limit(1);
-    if (existing.length === 0) {
-      await db.insert(qualityStandards).values(defaultQualityStandards.map((standard) => ({
-        ...standard,
-        createdByMemberId: req.member!.id,
-      })));
-      await writeAuthorityAudit({
-        actor: req.member,
-        authority: "admin",
-        action: "bootstrap_quality_standards",
-        targetType: "quality_standards",
-      });
-    }
-    res.json({ ok: true });
+    const standards = await ensureDefaultQualityStandards(req.member!.id);
+    await writeAuthorityAudit({
+      actor: req.member,
+      authority: "admin",
+      action: "bootstrap_quality_standards",
+      targetType: "quality_standards",
+      metadata: { standardCount: standards.length },
+    });
+    res.json({ ok: true, standardCount: standards.length });
   });
 
   app.get("/api/quality/standards", requireAuth, async (_req, res) => {
@@ -97,8 +61,13 @@ export function registerQualityRoutes(app: Express) {
 
   app.post("/api/quality/reviews", requireAuth, requireCapability("quality.manage"), async (req, res) => {
     const input = qualityReviewInputSchema.parse(req.body as unknown);
-    if (input.status === "waived" && !(await memberHasCapability(req.member!, "quality.override"))) {
-      return res.status(403).json({ message: "Only the administrator may waive a quality standard" });
+    if (input.status === "waived") {
+      if (!(await memberHasCapability(req.member!, "quality.override"))) {
+        return res.status(403).json({ message: "Only the administrator may waive a quality standard" });
+      }
+      if (!input.notes?.trim()) {
+        return res.status(400).json({ message: "A written reason is required to waive a quality standard" });
+      }
     }
 
     const [work] = await db.select().from(workOrders).where(eq(workOrders.id, input.workOrderId)).limit(1);
