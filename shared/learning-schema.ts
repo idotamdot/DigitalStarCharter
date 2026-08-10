@@ -1,7 +1,7 @@
 import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { resources } from "./schema";
 import { members } from "./identity-schema";
+import { resources } from "./resource-schema";
 import { learningSkillLevelSchema, learningTierSchema } from "./learning";
 
 export const learningPaths = pgTable("learning_paths", {
