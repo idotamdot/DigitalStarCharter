@@ -1,111 +1,120 @@
-import { createContext, ReactNode, useContext } from "react";
-import {
-  useQuery,
-  useMutation,
-  UseMutationResult,
-} from "@tanstack/react-query";
-import { User, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { useMutation, type UseMutationResult } from "@tanstack/react-query";
+import type { User } from "@shared/schema";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import { neonAuth, getNeonJwt } from "@/lib/neon-auth";
 import { useToast } from "@/hooks/use-toast";
 
-type LoginData = Pick<InsertUser, "username" | "password">;
-
-// The Fast Refresh issue is related to how we export the context
-// Instead of directly exporting, we'll define it first and then export
-const AuthContext = createContext<{
+interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<User, Error, InsertUser>;
-} | null>(null);
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 export { AuthContext };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  
-  const {
-    data: user,
-    error,
-    isLoading,
-  } = useQuery<User | null, Error>({
-    queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-  });
+  const session = neonAuth.useSession();
+  const [appUser, setAppUser] = useState<User | null>(null);
+  const [isBridging, setIsBridging] = useState(false);
+  const [bridgeError, setBridgeError] = useState<Error | null>(null);
 
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
-    },
-    onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Login failed",
-        description: "Invalid username or password",
-        variant: "destructive",
-      });
-    },
-  });
+  useEffect(() => {
+    let cancelled = false;
 
-  const registerMutation = useMutation({
-    mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
-    },
-    onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Registration failed",
-        description: "Please check your inputs and try again",
-        variant: "destructive",
-      });
-    },
-  });
+    async function bridgeSession() {
+      if (!session.data?.user) {
+        setAppUser(null);
+        setBridgeError(null);
+        return;
+      }
 
-  const logoutMutation = useMutation({
+      setIsBridging(true);
+      setBridgeError(null);
+
+      try {
+        const token = await getNeonJwt();
+        if (!token) {
+          throw new Error("Neon Auth did not provide a JWT for this session");
+        }
+
+        const response = await fetch("/api/auth/neon/session", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          const body = (await response.json().catch(() => null)) as { message?: string } | null;
+          throw new Error(body?.message || "Unable to establish application session");
+        }
+
+        const user = (await response.json()) as User;
+        if (!cancelled) {
+          setAppUser(user);
+          queryClient.setQueryData(["/api/user"], user);
+          queryClient.setQueryData(["/api/users/me"], user);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setAppUser(null);
+          setBridgeError(error instanceof Error ? error : new Error("Authentication bridge failed"));
+        }
+      } finally {
+        if (!cancelled) {
+          setIsBridging(false);
+        }
+      }
+    }
+
+    void bridgeSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session.data?.user?.id]);
+
+  const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      await neonAuth.signOut();
+      try {
+        await apiRequest("POST", "/api/logout");
+      } catch {
+        // Neon is authoritative; a missing legacy session does not block logout.
+      }
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
+      setAppUser(null);
+      queryClient.clear();
       toast({
-        title: "Logout successful",
-        description: "You have been logged out",
+        title: "Signed out",
+        description: "Your session has ended.",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
-        title: "Logout failed",
-        description: "Please try again",
+        title: "Sign out failed",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
+
+  const sessionError = session.error instanceof Error ? session.error : null;
 
   return (
     <AuthContext.Provider
       value={{
-        user: user ?? null,
-        isLoading,
-        error,
-        loginMutation,
+        user: appUser,
+        isLoading: session.isPending || isBridging,
+        error: bridgeError || sessionError,
         logoutMutation,
-        registerMutation,
       }}
     >
       {children}
