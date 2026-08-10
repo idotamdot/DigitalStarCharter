@@ -4,7 +4,14 @@ import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { verifyNeonJwt } from "./neon-auth";
-import { users, type User } from "@shared/schema";
+import { getAccessSnapshot, isConfiguredAdmin } from "./access-control";
+import { users, type User as AppUser } from "@shared/schema";
+
+declare global {
+  namespace Express {
+    interface User extends AppUser {}
+  }
+}
 
 const scryptAsync = promisify(scrypt);
 
@@ -22,12 +29,10 @@ function bearerToken(req: Request): string | null {
     : null;
 }
 
-async function getOrCreateAppUser(token: string): Promise<User> {
+async function getOrCreateAppUser(token: string): Promise<AppUser> {
   const identity = await verifyNeonJwt(token);
   const email = identity.email?.trim().toLowerCase();
-  if (!email) {
-    throw new Error("Authenticated Neon identity has no email address");
-  }
+  if (!email) throw new Error("Authenticated Neon identity has no email address");
 
   const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (existing) return existing;
@@ -43,14 +48,17 @@ async function getOrCreateAppUser(token: string): Promise<User> {
   return created;
 }
 
+async function resolveOptionalIdentity(req: Request): Promise<void> {
+  if (req.user) return;
+  const token = bearerToken(req);
+  if (!token) return;
+  req.user = await getOrCreateAppUser(token);
+}
+
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    const token = bearerToken(req);
-    if (!token) {
-      return res.status(401).json({ message: "Neon Auth sign-in required" });
-    }
-
-    req.user = await getOrCreateAppUser(token);
+    await resolveOptionalIdentity(req);
+    if (!req.user) return res.status(401).json({ message: "Neon Auth sign-in required" });
     next();
   } catch (error) {
     return res.status(401).json({
@@ -61,24 +69,32 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   await requireAuth(req, res, () => {
-    const adminEmail = process.env.ADMIN?.trim().toLowerCase();
-    const userEmail = req.user?.email?.trim().toLowerCase();
-
-    if (!adminEmail) {
+    if (!process.env.ADMIN?.trim()) {
       res.status(503).json({ message: "ADMIN is not configured" });
       return;
     }
-
-    if (!userEmail || userEmail !== adminEmail) {
+    if (!isConfiguredAdmin(req.user)) {
       res.status(403).json({ message: "Administrator access required" });
       return;
     }
-
     next();
   });
 }
 
 export function setupAuth(app: Express) {
+  // Resolve a valid Neon bearer token opportunistically so legacy read routes that
+  // inspect req.isAuthenticated() continue to work during the Neon-only migration.
+  app.use(async (req, _res, next) => {
+    if (!req.path.startsWith("/api/")) return next();
+    try {
+      await resolveOptionalIdentity(req);
+    } catch {
+      // Public endpoints remain public; protected endpoints re-verify and reject.
+    }
+    req.isAuthenticated = () => Boolean(req.user);
+    next();
+  });
+
   app.post("/api/register", (_req, res) => {
     res.status(410).json({ message: "Password registration has been retired. Use Neon magic-link sign-in." });
   });
@@ -87,21 +103,20 @@ export function setupAuth(app: Express) {
     res.status(410).json({ message: "Password login has been retired. Use Neon magic-link sign-in." });
   });
 
-  app.post("/api/logout", (_req, res) => {
-    res.status(204).end();
-  });
+  app.post("/api/logout", (_req, res) => res.status(204).end());
 
   app.get("/api/user", requireAuth, (req, res) => {
-    const { password: _password, ...safeUser } = req.user as User;
+    const { password: _password, ...safeUser } = req.user as AppUser;
     res.json(safeUser);
   });
 
-  app.get("/api/admin/status", requireAuth, (req, res) => {
-    const adminEmail = process.env.ADMIN?.trim().toLowerCase();
-    const userEmail = req.user?.email?.trim().toLowerCase();
+  app.get("/api/admin/status", requireAuth, async (req, res) => {
+    const access = await getAccessSnapshot(req.user!);
     res.json({
-      isAdmin: Boolean(adminEmail && userEmail === adminEmail),
-      email: userEmail ?? null,
+      isAdmin: access.isAdmin,
+      email: req.user?.email ?? null,
+      domains: access.domains,
+      capabilities: access.capabilities,
     });
   });
 }
