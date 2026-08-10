@@ -1,4 +1,5 @@
 import express, { type Express, type NextFunction, type Request, type Response } from "express";
+import { ZodError } from "zod";
 import { setupAuth } from "./auth";
 import { registerAccountingRoutes } from "./accounting-routes";
 import { registerLearningRoutes } from "./learning-routes";
@@ -49,6 +50,16 @@ export function createApp(): Express {
 
 export function attachErrorHandler(app: Express): void {
   app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    if (error instanceof ZodError) {
+      return res.status(400).json({
+        message: "Invalid request",
+        issues: error.issues.map((issue) => ({
+          path: issue.path.join("."),
+          message: issue.message,
+        })),
+      });
+    }
+
     const normalized: HttpErrorShape = error instanceof Error
       ? { message: error.message }
       : typeof error === "object" && error !== null
@@ -56,6 +67,6 @@ export function attachErrorHandler(app: Express): void {
         : {};
     const status = normalized.status ?? normalized.statusCode ?? 500;
     const message = normalized.message ?? "Internal Server Error";
-    res.status(status).json({ message });
+    return res.status(status).json({ message });
   });
 }
