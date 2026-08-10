@@ -1,106 +1,121 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { Bot, BriefcaseBusiness, Landmark, ShieldCheck, TrendingUp, Users } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiRequest } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import type { OperatingSummaryApi } from "@shared/operating-api";
 
-interface Role { id: number; name: string; domain: string; description: string; revenueResponsibility?: string | null; }
-interface WorkOrder { id: number; title: string; status: string; expectedRevenueCents: number; actualRevenueCents: number; }
-interface Decision { id: number; title: string; domain: string; status: string; consequenceLevel: string; recommendation: string; rationale: string; }
-interface GrowthPlan { id: number; proposedRoleName: string; safeToAdd: boolean; status: string; analysis: { monthlyMargin?: number; requiredReserveCents?: number } | null; }
-interface Person { id: number; fullName: string; email: string; }
-interface Summary {
-  roles: Role[];
-  work: WorkOrder[];
-  decisions: Decision[];
-  growth: GrowthPlan[];
-  people: Person[];
-  totals: { incomeCents: number; expenseCents: number; reserveCents: number };
-}
-
-const money = (cents: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+const money = (cents: number) => new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+}).format(cents / 100);
 
 export default function OperationsConsole() {
-  const queryClient = useQueryClient();
-  const { data, isLoading, error } = useQuery<Summary>({ queryKey: ["/api/operating/summary"] });
-
-  const bootstrap = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/operating/bootstrap", {}),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/operating/summary"] }),
-  });
-
-  const review = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: "approved" | "rejected" }) =>
-      apiRequest("POST", `/api/operating/ai-decisions/${id}/review`, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/operating/summary"] }),
-  });
+  const { member } = useAuth();
+  const summaryQuery = useQuery<OperatingSummaryApi>({ queryKey: ["/api/operating/summary"] });
+  const data = summaryQuery.data;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       <Navbar />
-      <main className="flex-grow pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div>
-              <p className="text-emerald-300 font-semibold tracking-wide uppercase text-sm">Human-in-the-loop management</p>
-              <h1 className="text-4xl font-bold mt-2">Charter Operating System</h1>
-              <p className="text-slate-300 mt-3 max-w-3xl">People, work, finance, quality and growth in one accountable operating loop. AI may propose and analyze; consequential actions require human review.</p>
-            </div>
-            <Button onClick={() => bootstrap.mutate()} disabled={bootstrap.isPending}>Initialize human roles</Button>
-          </div>
+      <main className="mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 lg:px-8">
+        <header className="mb-10 max-w-4xl">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Shared operating picture</p>
+          <h1 className="mt-2 text-4xl font-bold">Charter Operating System</h1>
+          <p className="mt-3 text-lg text-slate-300">
+            Members can see how people, work, money, quality and growth fit together. Visibility is shared; consequential authority remains capability-bound and human-reviewed.
+          </p>
+        </header>
 
-          {isLoading && <p>Loading operating system…</p>}
-          {error && <Card><CardContent className="pt-6">The operating tables may not exist yet. Apply the Drizzle schema to Neon, then reload this page.</CardContent></Card>}
-
-          {data && <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Metric title="Income recorded" value={money(data.totals.incomeCents)} />
-              <Metric title="Operating costs" value={money(data.totals.expenseCents)} />
-              <Metric title="Reserve recorded" value={money(data.totals.reserveCents)} />
-              <Metric title="Net before distributions" value={money(data.totals.incomeCents - data.totals.expenseCents - data.totals.reserveCents)} />
-            </div>
-
-            <section>
-              <h2 className="text-2xl font-bold mb-4">Human roles</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                {data.roles.map((role) => <Card key={role.id} className="bg-slate-900 border-slate-700 text-slate-100"><CardHeader><CardTitle>{role.name}</CardTitle></CardHeader><CardContent><p className="text-sm text-emerald-300 mb-2">{role.domain}</p><p className="text-sm text-slate-300">{role.description}</p>{role.revenueResponsibility && <p className="text-sm mt-3"><strong>Income impact:</strong> {role.revenueResponsibility}</p>}</CardContent></Card>)}
-              </div>
+        {summaryQuery.isLoading ? (
+          <Card className="h-72 animate-pulse border-slate-800 bg-slate-900/40" />
+        ) : summaryQuery.error || !data ? (
+          <Card className="border-red-900/50 bg-red-950/20"><CardHeader><CardTitle>Operating system unavailable</CardTitle><CardDescription>{summaryQuery.error?.message ?? "No operating summary is available."}</CardDescription></CardHeader></Card>
+        ) : (
+          <div className="space-y-8">
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <Metric icon={<Landmark className="h-5 w-5" />} label="Recorded income" value={money(data.totals.incomeCents)} />
+              <Metric icon={<BriefcaseBusiness className="h-5 w-5" />} label="Operating costs" value={money(data.totals.expenseCents)} />
+              <Metric icon={<ShieldCheck className="h-5 w-5" />} label="Reserve" value={money(data.totals.reserveCents)} />
+              <Metric icon={<TrendingUp className="h-5 w-5" />} label="Net before distributions" value={money(data.totals.incomeCents - data.totals.expenseCents - data.totals.reserveCents)} />
             </section>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-slate-900 border-slate-700 text-slate-100">
-                <CardHeader><CardTitle>Revenue work</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  {data.work.length === 0 && <p className="text-slate-400">No work orders yet.</p>}
-                  {data.work.slice(0, 8).map((work) => <div key={work.id} className="border border-slate-700 rounded-lg p-3"><div className="flex justify-between gap-4"><strong>{work.title}</strong><span>{work.status}</span></div><p className="text-sm text-slate-400 mt-1">Expected {money(work.expectedRevenueCents)} · Actual {money(work.actualRevenueCents)}</p></div>)}
+            <div className="grid gap-6 xl:grid-cols-2">
+              <Card className="border-slate-800 bg-slate-900/55">
+                <CardHeader><CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Human roles</CardTitle><CardDescription>Responsibility is explicit so coordination does not become invisible labor.</CardDescription></CardHeader>
+                <CardContent className="grid gap-3 md:grid-cols-2">
+                  {data.roles.filter((role) => role.active).map((role) => (
+                    <div key={role.id} className="rounded-lg border border-slate-800 p-4">
+                      <div className="flex items-center justify-between gap-2"><strong>{role.name}</strong><Badge variant="outline" className="capitalize">{role.domain}</Badge></div>
+                      <p className="mt-2 text-sm text-slate-400">{role.description}</p>
+                      {role.revenueResponsibility && <p className="mt-3 text-xs text-emerald-300">{role.revenueResponsibility}</p>}
+                    </div>
+                  ))}
+                  {data.roles.length === 0 && <p className="text-sm text-slate-400">Standard roles have not been initialized yet.</p>}
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-900 border-slate-700 text-slate-100">
-                <CardHeader><CardTitle>Growth gate</CardTitle></CardHeader>
+              <Card className="border-slate-800 bg-slate-900/55">
+                <CardHeader><CardTitle>Work queue</CardTitle><CardDescription>Revenue work and operational commitments currently moving through the network.</CardDescription></CardHeader>
                 <CardContent className="space-y-3">
-                  {data.growth.length === 0 && <p className="text-slate-400">No proposed permanent additions yet.</p>}
-                  {data.growth.map((plan) => <div key={plan.id} className="border border-slate-700 rounded-lg p-3"><div className="flex justify-between"><strong>{plan.proposedRoleName}</strong><span className={plan.safeToAdd ? "text-emerald-300" : "text-amber-300"}>{plan.safeToAdd ? "Safe to add" : "Not yet safe"}</span></div><p className="text-sm text-slate-400 mt-1">Status: {plan.status}</p></div>)}
+                  {data.work.slice(0, 10).map((work) => (
+                    <div key={work.id} className={work.assignedMemberId === member?.id ? "rounded-lg border border-blue-500/30 bg-blue-950/10 p-4" : "rounded-lg border border-slate-800 p-4"}>
+                      <div className="flex flex-wrap items-center justify-between gap-2"><strong>{work.title}</strong><Badge className="capitalize">{work.status.replaceAll("_", " ")}</Badge></div>
+                      <p className="mt-2 text-sm text-slate-400">Expected {money(work.expectedRevenueCents)} · Actual {money(work.actualRevenueCents)}</p>
+                    </div>
+                  ))}
+                  {data.work.length === 0 && <p className="text-sm text-slate-400">No work orders yet.</p>}
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="bg-slate-900 border-slate-700 text-slate-100">
-              <CardHeader><CardTitle>AI proposals awaiting human judgment</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                {data.decisions.filter((d) => d.status === "human_review").length === 0 && <p className="text-slate-400">No decisions awaiting review.</p>}
-                {data.decisions.filter((d) => d.status === "human_review").map((decision) => <div key={decision.id} className="border border-slate-700 rounded-lg p-4"><div className="flex flex-col md:flex-row md:justify-between gap-2"><div><p className="text-xs uppercase tracking-wide text-purple-300">{decision.domain} · {decision.consequenceLevel}</p><h3 className="font-bold text-lg">{decision.title}</h3></div><div className="flex gap-2"><Button variant="outline" onClick={() => review.mutate({ id: decision.id, status: "rejected" })}>Reject</Button><Button onClick={() => review.mutate({ id: decision.id, status: "approved" })}>Approve</Button></div></div><p className="mt-3">{decision.recommendation}</p><p className="text-sm text-slate-400 mt-2">Why: {decision.rationale}</p></div>)}
+            <div className="grid gap-6 xl:grid-cols-2">
+              <Card className="border-slate-800 bg-slate-900/55">
+                <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Sustainable growth gates</CardTitle><CardDescription>Permanent expansion should follow economic capacity, not precede it.</CardDescription></CardHeader>
+                <CardContent className="space-y-3">
+                  {data.growth.map((plan) => (
+                    <div key={plan.id} className="rounded-lg border border-slate-800 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2"><strong>{plan.proposedRoleName}</strong><Badge variant={plan.safeToAdd ? "default" : "outline"}>{plan.safeToAdd ? "Financial gate passed" : "Not yet safe"}</Badge></div>
+                      <p className="mt-2 text-sm text-slate-400">Status: {plan.status.replaceAll("_", " ")} · Monthly compensation {money(plan.monthlyCompensationCents)}</p>
+                    </div>
+                  ))}
+                  {data.growth.length === 0 && <p className="text-sm text-slate-400">No permanent expansion proposals yet.</p>}
+                </CardContent>
+              </Card>
+
+              <Card className="border-slate-800 bg-slate-900/55">
+                <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> AI recommendations</CardTitle><CardDescription>Recommendations remain proposals until a human with the required authority reviews them.</CardDescription></CardHeader>
+                <CardContent className="space-y-3">
+                  {data.decisions.slice(0, 10).map((decision) => (
+                    <div key={decision.id} className="rounded-lg border border-slate-800 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs uppercase tracking-wide text-violet-300">{decision.domain} · {decision.consequenceLevel}</p><strong>{decision.title}</strong></div><Badge variant="outline" className="capitalize">{decision.status.replaceAll("_", " ")}</Badge></div>
+                      <p className="mt-3 text-sm">{decision.recommendation}</p>
+                      <p className="mt-2 text-xs text-slate-500">Rationale: {decision.rationale}</p>
+                    </div>
+                  ))}
+                  {data.decisions.length === 0 && <p className="text-sm text-slate-400">No AI management proposals have been submitted.</p>}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="border-slate-800 bg-slate-900/55">
+              <CardHeader><CardTitle>Your authority snapshot</CardTitle><CardDescription>These permissions are calculated by the server from verified identity and active role assignments.</CardDescription></CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                {data.access.capabilities.map((capability) => <Badge key={capability} variant="outline">{capability}</Badge>)}
+                {data.access.capabilities.length === 0 && <span className="text-sm text-slate-400">Ordinary member authority only.</span>}
               </CardContent>
             </Card>
-          </>}
-        </div>
+          </div>
+        )}
       </main>
       <Footer />
     </div>
   );
 }
 
-function Metric({ title, value }: { title: string; value: string }) {
-  return <Card className="bg-slate-900 border-slate-700 text-slate-100"><CardContent className="pt-6"><p className="text-sm text-slate-400">{title}</p><p className="text-2xl font-bold mt-1">{value}</p></CardContent></Card>;
+function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return <Card className="border-slate-800 bg-slate-900/55"><CardContent className="p-5"><div className="mb-3 flex items-center gap-2 text-slate-400">{icon}<span className="text-sm">{label}</span></div><div className="text-2xl font-bold">{value}</div></CardContent></Card>;
 }
