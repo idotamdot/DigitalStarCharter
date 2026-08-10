@@ -6,6 +6,7 @@ import { evaluateWorkQualityGate } from "./quality-service";
 
 export async function enforceQualityBeforeCompletion(req: Request, res: Response, next: NextFunction) {
   if (req.method !== "PATCH" || !/^\/api\/operating\/work\/\d+\/status\/?$/.test(req.path)) return next();
+  if (!req.member) return next();
 
   const body: unknown = req.body;
   if (typeof body !== "object" || body === null || !("status" in body) || body.status !== "completed") return next();
