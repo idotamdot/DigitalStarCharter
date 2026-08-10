@@ -1,10 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
-import { userHasCapability, writeAuthorityAudit } from "./access-control";
+import { memberHasCapability, writeAuthorityAudit, type CharterCapability } from "./access-control";
 
 interface LegacyRule {
   method: string;
   pattern: RegExp;
-  capability: Parameters<typeof userHasCapability>[1];
+  capability: CharterCapability;
   action: string;
   targetType: string;
 }
@@ -29,12 +29,12 @@ const rules: LegacyRule[] = [
 export async function enforceGlobalAuthorization(req: Request, res: Response, next: NextFunction) {
   const rule = rules.find((candidate) => candidate.method === req.method && candidate.pattern.test(req.path));
   if (!rule) return next();
-  if (!req.user) return res.status(401).json({ message: "Neon Auth sign-in required" });
+  if (!req.member) return res.status(401).json({ message: "Neon Auth sign-in required" });
 
-  const allowed = await userHasCapability(req.user, rule.capability);
+  const allowed = await memberHasCapability(req.member, rule.capability);
   if (!allowed) {
     await writeAuthorityAudit({
-      actor: req.user,
+      actor: req.member,
       authority: rule.capability,
       action: rule.action,
       targetType: rule.targetType,
