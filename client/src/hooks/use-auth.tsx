@@ -7,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextValue {
   member: Member | null;
-  user: Member | null;
   isLoading: boolean;
   error: Error | null;
   logoutMutation: UseMutationResult<void, Error, void>;
@@ -42,9 +41,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!cancelled) {
           setMember(resolvedMember);
           queryClient.setQueryData(["/api/member"], resolvedMember);
-          // Temporary aliases while legacy client surfaces are retired.
-          queryClient.setQueryData(["/api/user"], resolvedMember);
-          queryClient.setQueryData(["/api/users/me"], resolvedMember);
         }
       } catch (error) {
         if (!cancelled) {
@@ -65,9 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
       const result = await neonAuth.signOut();
-      if (result.error) {
-        throw new Error(result.error.message || "Unable to sign out");
-      }
+      if (result.error) throw new Error(result.error.message || "Unable to sign out");
     },
     onSuccess: () => {
       setMember(null);
@@ -85,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         member,
-        user: member,
         isLoading: session.isPending || isResolvingMember,
         error: memberError || sessionError,
         logoutMutation,
