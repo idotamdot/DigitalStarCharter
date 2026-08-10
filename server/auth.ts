@@ -1,26 +1,17 @@
 import type { Express, Request, Response, NextFunction } from "express";
-import { randomBytes, scrypt } from "node:crypto";
-import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { verifyNeonJwt } from "./neon-auth";
 import { getAccessSnapshot, isConfiguredAdmin } from "./access-control";
 import { enforceGlobalAuthorization } from "./global-policy";
-import { users, type User as AppUser } from "@shared/schema";
+import { members, memberProfiles, type Member } from "@shared/identity-schema";
 
 declare global {
   namespace Express {
-    interface User extends AppUser {}
+    interface Request {
+      member?: Member;
+    }
   }
-}
-
-const scryptAsync = promisify(scrypt);
-
-async function createPlaceholderPassword(): Promise<string> {
-  const source = randomBytes(32).toString("hex");
-  const salt = randomBytes(16).toString("hex");
-  const buffer = (await scryptAsync(source, salt, 64)) as Buffer;
-  return `${buffer.toString("hex")}.${salt}`;
 }
 
 function bearerToken(req: Request): string | null {
@@ -30,36 +21,55 @@ function bearerToken(req: Request): string | null {
     : null;
 }
 
-async function getOrCreateAppUser(token: string): Promise<AppUser> {
+async function getOrCreateMember(token: string): Promise<Member> {
   const identity = await verifyNeonJwt(token);
   const email = identity.email?.trim().toLowerCase();
   if (!email) throw new Error("Authenticated Neon identity has no email address");
 
-  const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  if (existing) return existing;
+  const [bySubject] = await db.select().from(members).where(eq(members.authSubject, identity.sub)).limit(1);
+  if (bySubject) {
+    if (bySubject.email !== email || (identity.name?.trim() && bySubject.displayName !== identity.name.trim())) {
+      const [updated] = await db.update(members).set({
+        email,
+        displayName: identity.name?.trim() || bySubject.displayName,
+        updatedAt: new Date(),
+      }).where(eq(members.id, bySubject.id)).returning();
+      return updated;
+    }
+    return bySubject;
+  }
 
-  const safeSubject = identity.sub.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 48);
-  const [created] = await db.insert(users).values({
-    username: `neon_${safeSubject}`,
+  const [byEmail] = await db.select().from(members).where(eq(members.email, email)).limit(1);
+  if (byEmail) {
+    const [linked] = await db.update(members).set({
+      authSubject: identity.sub,
+      displayName: identity.name?.trim() || byEmail.displayName,
+      updatedAt: new Date(),
+    }).where(eq(members.id, byEmail.id)).returning();
+    return linked;
+  }
+
+  const [created] = await db.insert(members).values({
+    authSubject: identity.sub,
     email,
-    password: await createPlaceholderPassword(),
-    fullName: identity.name?.trim() || email.split("@")[0],
+    displayName: identity.name?.trim() || email.split("@")[0],
   }).returning();
 
+  await db.insert(memberProfiles).values({ memberId: created.id });
   return created;
 }
 
 async function resolveOptionalIdentity(req: Request): Promise<void> {
-  if (req.user) return;
+  if (req.member) return;
   const token = bearerToken(req);
   if (!token) return;
-  req.user = await getOrCreateAppUser(token);
+  req.member = await getOrCreateMember(token);
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
     await resolveOptionalIdentity(req);
-    if (!req.user) return res.status(401).json({ message: "Neon Auth sign-in required" });
+    if (!req.member) return res.status(401).json({ message: "Neon Auth sign-in required" });
     next();
   } catch (error) {
     return res.status(401).json({
@@ -74,7 +84,7 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
       res.status(503).json({ message: "ADMIN is not configured" });
       return;
     }
-    if (!isConfiguredAdmin(req.user)) {
+    if (!isConfiguredAdmin(req.member)) {
       res.status(403).json({ message: "Administrator access required" });
       return;
     }
@@ -88,13 +98,11 @@ export function setupAuth(app: Express) {
     try {
       await resolveOptionalIdentity(req);
     } catch {
-      // Public endpoints remain public; protected endpoints re-verify and reject.
+      // Public routes remain public. Protected routes call requireAuth and reject.
     }
-    req.isAuthenticated = () => Boolean(req.user);
     next();
   });
 
-  // Central policy runs before the legacy route declarations that follow setupAuth().
   app.use(enforceGlobalAuthorization);
 
   app.post("/api/register", (_req, res) => {
@@ -107,16 +115,20 @@ export function setupAuth(app: Express) {
 
   app.post("/api/logout", (_req, res) => res.status(204).end());
 
+  app.get("/api/member", requireAuth, (req, res) => {
+    res.json(req.member);
+  });
+
+  // Temporary compatibility alias while the client is migrated from /api/user.
   app.get("/api/user", requireAuth, (req, res) => {
-    const { password: _password, ...safeUser } = req.user as AppUser;
-    res.json(safeUser);
+    res.json(req.member);
   });
 
   app.get("/api/admin/status", requireAuth, async (req, res) => {
-    const access = await getAccessSnapshot(req.user!);
+    const access = await getAccessSnapshot(req.member!);
     res.json({
       isAdmin: access.isAdmin,
-      email: req.user?.email ?? null,
+      email: req.member?.email ?? null,
       domains: access.domains,
       capabilities: access.capabilities,
     });
