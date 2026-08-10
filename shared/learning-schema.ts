@@ -1,6 +1,7 @@
 import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { users, resources } from "./schema";
+import { resources } from "./schema";
+import { members } from "./identity-schema";
 import { learningSkillLevelSchema, learningTierSchema } from "./learning";
 
 export const learningPaths = pgTable("learning_paths", {
@@ -12,8 +13,8 @@ export const learningPaths = pgTable("learning_paths", {
   estimatedHours: integer("estimated_hours").notNull(),
   thumbnailUrl: text("thumbnail_url"),
   tags: jsonb("tags").$type<string[]>().default([]).notNull(),
-  authorId: integer("author_id").references(() => users.id, { onDelete: "restrict" }).notNull(),
-  requiredTier: text("required_tier").notNull().default("self-guided"),
+  authorMemberId: integer("author_member_id").references(() => members.id, { onDelete: "restrict" }).notNull(),
+  requiredTier: text("required_tier").notNull().default("member"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -21,7 +22,7 @@ export const learningPaths = pgTable("learning_paths", {
 export const learningPathSteps = pgTable("learning_path_steps", {
   id: serial("id").primaryKey(),
   pathId: integer("path_id").references(() => learningPaths.id, { onDelete: "cascade" }).notNull(),
-  resourceId: integer("resource_id").references(() => resources.id, { onDelete: "restrict" }).notNull(),
+  resourceId: integer("resource_id").references(() => resources.id, { onDelete: "set null" }),
   stepOrder: integer("step_order").notNull(),
   title: text("title").notNull(),
   description: text("description"),
@@ -29,9 +30,9 @@ export const learningPathSteps = pgTable("learning_path_steps", {
   isRequired: boolean("is_required").default(true).notNull(),
 });
 
-export const userLearningEnrollments = pgTable("user_learning_enrollments", {
+export const learningEnrollments = pgTable("learning_enrollments", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  memberId: integer("member_id").references(() => members.id, { onDelete: "cascade" }).notNull(),
   pathId: integer("path_id").references(() => learningPaths.id, { onDelete: "cascade" }).notNull(),
   enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
@@ -40,9 +41,9 @@ export const userLearningEnrollments = pgTable("user_learning_enrollments", {
   lastAccessedAt: timestamp("last_accessed_at").defaultNow().notNull(),
 });
 
-export const userLearningProgress = pgTable("user_learning_progress", {
+export const learningProgress = pgTable("learning_progress", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  memberId: integer("member_id").references(() => members.id, { onDelete: "cascade" }).notNull(),
   pathId: integer("path_id").references(() => learningPaths.id, { onDelete: "cascade" }).notNull(),
   stepId: integer("step_id").references(() => learningPathSteps.id, { onDelete: "cascade" }).notNull(),
   startedAt: timestamp("started_at").defaultNow().notNull(),
@@ -57,18 +58,18 @@ export const insertLearningPathDbSchema = createInsertSchema(learningPaths, {
 }).omit({ id: true, createdAt: true, updatedAt: true });
 
 export const insertLearningPathStepDbSchema = createInsertSchema(learningPathSteps).omit({ id: true });
-export const insertUserLearningEnrollmentDbSchema = createInsertSchema(userLearningEnrollments).omit({
+export const insertLearningEnrollmentDbSchema = createInsertSchema(learningEnrollments).omit({
   id: true,
   enrolledAt: true,
   progressPercent: true,
   lastAccessedAt: true,
 });
-export const insertUserLearningProgressDbSchema = createInsertSchema(userLearningProgress).omit({
+export const insertLearningProgressDbSchema = createInsertSchema(learningProgress).omit({
   id: true,
   startedAt: true,
 });
 
 export type LearningPathRow = typeof learningPaths.$inferSelect;
 export type LearningPathStepRow = typeof learningPathSteps.$inferSelect;
-export type LearningEnrollmentRow = typeof userLearningEnrollments.$inferSelect;
-export type LearningProgressRow = typeof userLearningProgress.$inferSelect;
+export type LearningEnrollmentRow = typeof learningEnrollments.$inferSelect;
+export type LearningProgressRow = typeof learningProgress.$inferSelect;
