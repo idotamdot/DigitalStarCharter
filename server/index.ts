@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "node:http";
 import { setupAuth } from "./auth";
+import { registerAccountingRoutes } from "./accounting-routes";
 import { registerOperatingRoutes } from "./operating-routes";
 import { registerResourceRoutes } from "./resource-routes";
 import { registerLearningRoutes } from "./learning-routes";
@@ -37,6 +38,7 @@ app.use((req, res, next) => {
 setupAuth(app);
 registerResourceRoutes(app);
 registerLearningRoutes(app);
+registerAccountingRoutes(app);
 registerOperatingRoutes(app);
 
 app.get("/api/health", (_req, res) => {
