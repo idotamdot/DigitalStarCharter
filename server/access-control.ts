@@ -22,6 +22,7 @@ const adminOnly = new Set<CharterCapability>([
   "governance.manage",
   "finance.distribute",
   "growth.approve",
+  "quality.override",
   "ai.review",
   "ai.execute",
 ]);
@@ -53,6 +54,7 @@ export async function getAccessSnapshot(member: Member): Promise<AuthorityStatus
         "work.create",
         "work.assign",
         "quality.manage",
+        "quality.override",
         "catalog.manage",
         "learning.manage",
         "ai.propose",
