@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "./db";
 import { requireAuth } from "./auth";
 import { getAccessSnapshot, requireCapability } from "./access-control";
+import { members } from "@shared/identity-schema";
 import {
   insertResourceSchema,
   resources,
@@ -28,8 +29,7 @@ function toApi(resource: Resource): ResourceApi {
 
 async function viewerAccessLevel(memberId: number | undefined): Promise<ResourceAccessLevel> {
   if (!memberId) return "open";
-  const requestMember = await import("@shared/identity-schema");
-  const [member] = await db.select().from(requestMember.members).where(eq(requestMember.members.id, memberId)).limit(1);
+  const [member] = await db.select().from(members).where(eq(members.id, memberId)).limit(1);
   if (!member) return "open";
   const access = await getAccessSnapshot(member);
   return access.capabilities.includes("catalog.manage") || access.capabilities.includes("learning.manage")
