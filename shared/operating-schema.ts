@@ -1,12 +1,39 @@
 import { boolean, integer, jsonb, numeric, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { users } from "./schema";
+import { members } from "./identity-schema";
+
+export type OperatingDomain = "people" | "work" | "finance" | "quality" | "growth" | "governance";
+export type RoleAssignmentStatus = "active" | "paused" | "ended";
+export type WorkOrderStatus = "planned" | "ready" | "in_progress" | "blocked" | "human_review" | "completed" | "cancelled";
+export type LedgerEntryType = "income" | "expense" | "reserve" | "distribution" | "adjustment";
+export type DistributionStatus = "draft" | "human_review" | "approved" | "paid" | "rejected";
+export type GrowthPlanStatus = "draft" | "human_review" | "approved" | "rejected";
+export type AiDecisionStatus = "drafted" | "human_review" | "approved" | "modified" | "rejected" | "executed";
+export type ConsequenceLevel = "low" | "medium" | "high" | "critical";
+
+export interface GrowthAnalysis {
+  postHireMonthlyCosts?: number;
+  monthlyMargin?: number;
+  requiredReserveCents?: number;
+  reserveMonths?: number;
+  rules?: string[];
+  [key: string]: unknown;
+}
+
+export interface ExpectedImpact {
+  revenueCents?: number;
+  costCents?: number;
+  memberHours?: number;
+  quality?: string;
+  notes?: string[];
+  [key: string]: unknown;
+}
 
 export const charterRoles = pgTable("charter_roles", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  domain: text("domain").notNull(),
+  domain: text("domain").$type<OperatingDomain>().notNull(),
   description: text("description").notNull(),
   revenueResponsibility: text("revenue_responsibility"),
   humanAuthority: boolean("human_authority").default(true).notNull(),
@@ -17,8 +44,8 @@ export const charterRoles = pgTable("charter_roles", {
 export const roleAssignments = pgTable("role_assignments", {
   id: serial("id").primaryKey(),
   roleId: integer("role_id").references(() => charterRoles.id, { onDelete: "cascade" }).notNull(),
-  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  status: text("status").default("active").notNull(),
+  memberId: integer("member_id").references(() => members.id, { onDelete: "cascade" }).notNull(),
+  status: text("status").$type<RoleAssignmentStatus>().default("active").notNull(),
   compensationCentsMonthly: integer("compensation_cents_monthly").default(0).notNull(),
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),
   notes: text("notes"),
@@ -31,10 +58,10 @@ export const workOrders = pgTable("work_orders", {
   revenueType: text("revenue_type").default("direct").notNull(),
   expectedRevenueCents: integer("expected_revenue_cents").default(0).notNull(),
   actualRevenueCents: integer("actual_revenue_cents").default(0).notNull(),
-  assignedUserId: integer("assigned_user_id").references(() => users.id),
-  assignedRoleId: integer("assigned_role_id").references(() => charterRoles.id),
-  createdByUserId: integer("created_by_user_id").references(() => users.id),
-  status: text("status").default("planned").notNull(),
+  assignedMemberId: integer("assigned_member_id").references(() => members.id, { onDelete: "set null" }),
+  assignedRoleId: integer("assigned_role_id").references(() => charterRoles.id, { onDelete: "set null" }),
+  createdByMemberId: integer("created_by_member_id").references(() => members.id, { onDelete: "set null" }),
+  status: text("status").$type<WorkOrderStatus>().default("planned").notNull(),
   dueAt: timestamp("due_at"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -43,14 +70,14 @@ export const workOrders = pgTable("work_orders", {
 export const ledgerEntries = pgTable("charter_ledger_entries", {
   id: serial("id").primaryKey(),
   occurredAt: timestamp("occurred_at").defaultNow().notNull(),
-  type: text("type").notNull(),
+  type: text("type").$type<LedgerEntryType>().notNull(),
   category: text("category").notNull(),
   amountCents: integer("amount_cents").notNull(),
   description: text("description").notNull(),
-  workOrderId: integer("work_order_id").references(() => workOrders.id),
-  recordedByUserId: integer("recorded_by_user_id").references(() => users.id),
+  workOrderId: integer("work_order_id").references(() => workOrders.id, { onDelete: "set null" }),
+  recordedByMemberId: integer("recorded_by_member_id").references(() => members.id, { onDelete: "set null" }),
   source: text("source").default("manual").notNull(),
-  metadata: jsonb("metadata").default({}).notNull(),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}).notNull(),
 });
 
 export const distributionPeriods = pgTable("distribution_periods", {
@@ -62,8 +89,8 @@ export const distributionPeriods = pgTable("distribution_periods", {
   operatingCostsCents: integer("operating_costs_cents").default(0).notNull(),
   reserveContributionCents: integer("reserve_contribution_cents").default(0).notNull(),
   distributableCents: integer("distributable_cents").default(0).notNull(),
-  status: text("status").default("draft").notNull(),
-  approvedByUserId: integer("approved_by_user_id").references(() => users.id),
+  status: text("status").$type<DistributionStatus>().default("draft").notNull(),
+  approvedByMemberId: integer("approved_by_member_id").references(() => members.id, { onDelete: "set null" }),
   approvedAt: timestamp("approved_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -71,7 +98,7 @@ export const distributionPeriods = pgTable("distribution_periods", {
 export const memberDistributions = pgTable("member_distributions", {
   id: serial("id").primaryKey(),
   periodId: integer("period_id").references(() => distributionPeriods.id, { onDelete: "cascade" }).notNull(),
-  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  memberId: integer("member_id").references(() => members.id, { onDelete: "cascade" }).notNull(),
   amountCents: integer("amount_cents").notNull(),
   basis: text("basis").default("equal_share").notNull(),
   status: text("status").default("proposed").notNull(),
@@ -87,37 +114,37 @@ export const growthPlans = pgTable("growth_plans", {
   recurringMonthlyCostsCents: integer("recurring_monthly_costs_cents").default(0).notNull(),
   requiredReserveMonths: numeric("required_reserve_months").default("6").notNull(),
   safeToAdd: boolean("safe_to_add").default(false).notNull(),
-  analysis: jsonb("analysis").default({}).notNull(),
-  status: text("status").default("draft").notNull(),
+  analysis: jsonb("analysis").$type<GrowthAnalysis>().default({}).notNull(),
+  status: text("status").$type<GrowthPlanStatus>().default("draft").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  approvedByUserId: integer("approved_by_user_id").references(() => users.id),
+  approvedByMemberId: integer("approved_by_member_id").references(() => members.id, { onDelete: "set null" }),
   approvedAt: timestamp("approved_at"),
 });
 
 export const aiDecisions = pgTable("ai_decisions", {
   id: serial("id").primaryKey(),
-  domain: text("domain").notNull(),
+  domain: text("domain").$type<OperatingDomain>().notNull(),
   actionType: text("action_type").notNull(),
   title: text("title").notNull(),
   recommendation: text("recommendation").notNull(),
   rationale: text("rationale").notNull(),
   confidence: numeric("confidence").default("0").notNull(),
-  expectedImpact: jsonb("expected_impact").default({}).notNull(),
-  riskFlags: jsonb("risk_flags").default([]).notNull(),
-  consequenceLevel: text("consequence_level").default("low").notNull(),
-  status: text("status").default("drafted").notNull(),
+  expectedImpact: jsonb("expected_impact").$type<ExpectedImpact>().default({}).notNull(),
+  riskFlags: jsonb("risk_flags").$type<string[]>().default([]).notNull(),
+  consequenceLevel: text("consequence_level").$type<ConsequenceLevel>().default("low").notNull(),
+  status: text("status").$type<AiDecisionStatus>().default("drafted").notNull(),
   proposedBy: text("proposed_by").default("ai-management").notNull(),
-  reviewedByUserId: integer("reviewed_by_user_id").references(() => users.id),
+  reviewedByMemberId: integer("reviewed_by_member_id").references(() => members.id, { onDelete: "set null" }),
   reviewedAt: timestamp("reviewed_at"),
   reviewNotes: text("review_notes"),
-  executedByUserId: integer("executed_by_user_id").references(() => users.id),
+  executedByMemberId: integer("executed_by_member_id").references(() => members.id, { onDelete: "set null" }),
   executedAt: timestamp("executed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const authorityAuditLog = pgTable("authority_audit_log", {
   id: serial("id").primaryKey(),
-  actorUserId: integer("actor_user_id").references(() => users.id),
+  actorMemberId: integer("actor_member_id").references(() => members.id, { onDelete: "set null" }),
   actorEmail: text("actor_email"),
   authority: text("authority").notNull(),
   action: text("action").notNull(),
@@ -125,7 +152,7 @@ export const authorityAuditLog = pgTable("authority_audit_log", {
   targetId: text("target_id"),
   outcome: text("outcome").default("completed").notNull(),
   reason: text("reason"),
-  metadata: jsonb("metadata").default({}).notNull(),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
