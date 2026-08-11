@@ -19,6 +19,7 @@ const navLinks: readonly NavLink[] = [
   { text: "Dashboard", href: "/dashboard", requiresAuth: true },
   { text: "Profile", href: "/profile", requiresAuth: true },
   { text: "Operations", href: "/operations", requiresAuth: true },
+  { text: "Goodness", href: "/goodness", requiresAuth: true },
   { text: "Quality", href: "/quality", requiresAuth: true },
 ];
 
