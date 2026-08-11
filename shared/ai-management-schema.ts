@@ -20,7 +20,7 @@ export interface ManagementMetric {
 }
 
 export interface ManagementEvidenceItem {
-  source: "members" | "member_profiles" | "roles" | "work" | "accounting" | "quality" | "learning" | "growth";
+  source: "members" | "member_profiles" | "roles" | "work" | "accounting" | "goodness" | "quality" | "learning" | "growth";
   fact: string;
   recordIds?: number[];
   metrics?: ManagementMetric[];
@@ -35,6 +35,7 @@ export interface ManagementSnapshot {
   blockedWorkCount: number;
   overdueWorkCount: number;
   unassignedReadyWorkCount: number;
+  openGoodnessBlockCount: number;
   openQualityBlockCount: number;
   activeLearningEnrollmentCount: number;
   revenueLast30DaysCents: number;
