@@ -277,7 +277,7 @@ export function generateDeterministicFindings(context: ManagementContext): Deter
     && recentMarginCents > 0
     && snapshot.operatingCashCents > 0;
 
-  if (canConsiderCapacityExpansion) {
+  if (canConsiderCapacityExpansion && snapshot.reserveRunwayMonths !== null) {
     findings.push({
       domain: "growth",
       findingType: "capacity_pressure_with_financial_buffer",
