@@ -17,6 +17,7 @@ import type { OperatingSummaryApi } from "@shared/operating-api";
 export default function GoodnessConsole() {
   const queryClient = useQueryClient();
   const authority = useAuthority();
+  const canReview = authority.can("goodness.review");
   const summary = useQuery<OperatingSummaryApi>({ queryKey: ["/api/operating/summary"] });
   const [selectedWorkId, setSelectedWorkId] = useState<number | null>(null);
   const [evidence, setEvidence] = useState<Record<number, string>>({});
@@ -99,7 +100,7 @@ export default function GoodnessConsole() {
                     {current?.evidence && <p className="mt-3 rounded-md bg-slate-950/60 p-3 text-sm text-slate-300"><strong>Evidence:</strong> {current.evidence}</p>}
                     {current?.notes && <p className="mt-2 text-sm text-slate-400"><strong>Notes:</strong> {current.notes}</p>}
 
-                    {authority.isAdmin && (
+                    {canReview && (
                       <div className="mt-4 grid gap-3">
                         <div><Label>Evidence for a pass</Label><Textarea value={evidence[criterion.id] ?? ""} onChange={(event) => setEvidence((currentEvidence) => ({ ...currentEvidence, [criterion.id]: event.target.value }))} placeholder="What evidence demonstrates that this criterion is satisfied?" /></div>
                         <div><Label>Revision/failure notes</Label><Textarea value={notes[criterion.id] ?? ""} onChange={(event) => setNotes((currentNotes) => ({ ...currentNotes, [criterion.id]: event.target.value }))} placeholder="What must change, or why should this not be made?" /></div>
