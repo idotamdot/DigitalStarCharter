@@ -3,13 +3,21 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { members } from "./identity-schema";
 
-export type OperatingDomain = "people" | "work" | "finance" | "goodness" | "quality" | "growth" | "governance";
-export type RoleAssignmentStatus = "active" | "paused" | "ended";
-export type WorkOrderStatus = "planned" | "ready" | "in_progress" | "blocked" | "human_review" | "completed" | "cancelled";
-export type DistributionStatus = "draft" | "human_review" | "approved" | "paid" | "rejected";
-export type GrowthPlanStatus = "draft" | "human_review" | "approved" | "rejected";
-export type AiDecisionStatus = "drafted" | "human_review" | "approved" | "modified" | "rejected" | "executed";
-export type ConsequenceLevel = "low" | "medium" | "high" | "critical";
+export const operatingDomainSchema = z.enum(["people", "work", "finance", "goodness", "quality", "growth", "governance"]);
+export const roleAssignmentStatusSchema = z.enum(["active", "paused", "ended"]);
+export const workOrderStatusSchema = z.enum(["planned", "ready", "in_progress", "blocked", "human_review", "completed", "cancelled"]);
+export const distributionStatusSchema = z.enum(["draft", "human_review", "approved", "paid", "rejected"]);
+export const growthPlanStatusSchema = z.enum(["draft", "human_review", "approved", "rejected"]);
+export const aiDecisionStatusSchema = z.enum(["drafted", "human_review", "approved", "modified", "rejected", "executed"]);
+export const consequenceLevelSchema = z.enum(["low", "medium", "high", "critical"]);
+
+export type OperatingDomain = z.infer<typeof operatingDomainSchema>;
+export type RoleAssignmentStatus = z.infer<typeof roleAssignmentStatusSchema>;
+export type WorkOrderStatus = z.infer<typeof workOrderStatusSchema>;
+export type DistributionStatus = z.infer<typeof distributionStatusSchema>;
+export type GrowthPlanStatus = z.infer<typeof growthPlanStatusSchema>;
+export type AiDecisionStatus = z.infer<typeof aiDecisionStatusSchema>;
+export type ConsequenceLevel = z.infer<typeof consequenceLevelSchema>;
 
 export interface GrowthAnalysis {
   postHireMonthlyCosts?: number;
@@ -142,12 +150,31 @@ export const authorityAuditLog = pgTable("authority_audit_log", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertCharterRoleSchema = createInsertSchema(charterRoles).omit({ id: true, createdAt: true });
-export const insertRoleAssignmentSchema = createInsertSchema(roleAssignments).omit({ id: true, assignedAt: true });
-export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({ id: true, createdAt: true, completedAt: true });
-export const insertDistributionPeriodSchema = createInsertSchema(distributionPeriods).omit({ id: true, approvedAt: true, createdAt: true });
-export const insertGrowthPlanSchema = createInsertSchema(growthPlans).omit({ id: true, safeToAdd: true, analysis: true, approvedAt: true, createdAt: true });
-export const insertAiDecisionSchema = createInsertSchema(aiDecisions).omit({ id: true, reviewedAt: true, executedAt: true, createdAt: true });
+export const insertCharterRoleSchema = createInsertSchema(charterRoles, {
+  domain: operatingDomainSchema,
+}).omit({ id: true, createdAt: true });
+
+export const insertRoleAssignmentSchema = createInsertSchema(roleAssignments, {
+  status: roleAssignmentStatusSchema,
+}).omit({ id: true, assignedAt: true });
+
+export const insertWorkOrderSchema = createInsertSchema(workOrders, {
+  status: workOrderStatusSchema,
+}).omit({ id: true, createdAt: true, completedAt: true });
+
+export const insertDistributionPeriodSchema = createInsertSchema(distributionPeriods, {
+  status: distributionStatusSchema,
+}).omit({ id: true, approvedAt: true, createdAt: true });
+
+export const insertGrowthPlanSchema = createInsertSchema(growthPlans, {
+  status: growthPlanStatusSchema,
+}).omit({ id: true, safeToAdd: true, analysis: true, approvedAt: true, createdAt: true });
+
+export const insertAiDecisionSchema = createInsertSchema(aiDecisions, {
+  domain: operatingDomainSchema,
+  status: aiDecisionStatusSchema,
+  consequenceLevel: consequenceLevelSchema,
+}).omit({ id: true, reviewedAt: true, executedAt: true, createdAt: true });
 
 export type CharterRole = typeof charterRoles.$inferSelect;
 export type RoleAssignment = typeof roleAssignments.$inferSelect;
