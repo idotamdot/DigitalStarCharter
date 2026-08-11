@@ -34,8 +34,9 @@ export interface RoleFitResult {
   roleId: number;
   roleName: string;
   domain: string;
-  score: number;
-  breakdown: RoleFitBreakdown;
+  configured: boolean;
+  score: number | null;
+  breakdown: RoleFitBreakdown | null;
   matchedRequiredSkills: string[];
   missingRequiredSkills: string[];
   matchedHelpfulSkills: string[];
