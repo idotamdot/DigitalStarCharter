@@ -1,10 +1,21 @@
-import { boolean, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { members } from "./identity-schema";
-import { workOrders } from "./operating-schema";
 
 export const goodnessReviewStatusSchema = z.enum(["pending", "passed", "failed", "needs_revision"]);
 export type GoodnessReviewStatus = z.infer<typeof goodnessReviewStatusSchema>;
+
+export const goodnessSubjectTypeSchema = z.enum([
+  "work",
+  "product",
+  "service",
+  "venture",
+  "partnership",
+  "major_purchase",
+  "ai_capability",
+  "expansion",
+]);
+export type GoodnessSubjectType = z.infer<typeof goodnessSubjectTypeSchema>;
 
 export const goodnessCriteria = pgTable("goodness_criteria", {
   id: serial("id").primaryKey(),
@@ -19,9 +30,23 @@ export const goodnessCriteria = pgTable("goodness_criteria", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const goodnessSubjects = pgTable("goodness_subjects", {
+  id: serial("id").primaryKey(),
+  subjectType: text("subject_type").$type<GoodnessSubjectType>().notNull(),
+  sourceId: text("source_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: text("status").default("proposed").notNull(),
+  createdByMemberId: integer("created_by_member_id").references(() => members.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  sourceUnique: uniqueIndex("goodness_subjects_source_unique").on(table.subjectType, table.sourceId),
+}));
+
 export const goodnessReviews = pgTable("goodness_reviews", {
   id: serial("id").primaryKey(),
-  workOrderId: integer("work_order_id").references(() => workOrders.id, { onDelete: "cascade" }).notNull(),
+  subjectId: integer("subject_id").references(() => goodnessSubjects.id, { onDelete: "cascade" }).notNull(),
   criterionId: integer("criterion_id").references(() => goodnessCriteria.id, { onDelete: "restrict" }).notNull(),
   status: text("status").$type<GoodnessReviewStatus>().default("pending").notNull(),
   reviewerMemberId: integer("reviewer_member_id").references(() => members.id, { onDelete: "set null" }),
@@ -31,8 +56,15 @@ export const goodnessReviews = pgTable("goodness_reviews", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const goodnessSubjectInputSchema = z.object({
+  subjectType: goodnessSubjectTypeSchema,
+  sourceId: z.string().trim().min(1).max(200),
+  title: z.string().trim().min(1).max(300),
+  description: z.string().trim().min(1).max(6000),
+});
+
 export const goodnessReviewInputSchema = z.object({
-  workOrderId: z.number().int().positive(),
+  subjectId: z.number().int().positive(),
   criterionId: z.number().int().positive(),
   status: goodnessReviewStatusSchema,
   evidence: z.string().trim().min(1).max(6000).nullable().optional(),
@@ -47,5 +79,7 @@ export const goodnessReviewInputSchema = z.object({
 });
 
 export type GoodnessCriterion = typeof goodnessCriteria.$inferSelect;
+export type GoodnessSubject = typeof goodnessSubjects.$inferSelect;
 export type GoodnessReview = typeof goodnessReviews.$inferSelect;
+export type GoodnessSubjectInput = z.infer<typeof goodnessSubjectInputSchema>;
 export type GoodnessReviewInput = z.infer<typeof goodnessReviewInputSchema>;
