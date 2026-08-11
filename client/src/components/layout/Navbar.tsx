@@ -2,7 +2,7 @@ import { Link as RouterLink, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { HamburgerMenuIcon } from "@/lib/icons";
-import { ShieldCheck, Star } from "lucide-react";
+import { BrainCircuit, ShieldCheck, Star } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAuthority } from "@/hooks/use-authority";
 
@@ -41,6 +41,12 @@ export default function Navbar() {
     )
   );
 
+  const managementLink = member && authority.isAdmin ? (
+    <RouterLink href="/management" className="inline-flex items-center gap-1 px-2 py-2 text-sm font-semibold text-violet-300 hover:text-violet-200">
+      <BrainCircuit className="h-4 w-4" /> Management
+    </RouterLink>
+  ) : null;
+
   const adminLink = member && authority.isAdmin ? (
     <RouterLink href="/admin" className="inline-flex items-center gap-1 px-2 py-2 text-sm font-semibold text-amber-300 hover:text-amber-200">
       <ShieldCheck className="h-4 w-4" /> Admin
@@ -62,6 +68,7 @@ export default function Navbar() {
 
           <div className="hidden items-center space-x-5 md:flex">
             {filteredLinks.map((link) => <RouterLink key={link.href} href={link.href} className="px-2 py-2 text-sm font-medium text-gray-300 hover:text-blue-400">{link.text}</RouterLink>)}
+            {managementLink}
             {adminLink}
             {authControl}
           </div>
@@ -72,6 +79,7 @@ export default function Navbar() {
               <SheetContent side="right" className="border-gray-800 bg-gray-900/95">
                 <div className="mt-6 flex flex-col space-y-4">
                   {filteredLinks.map((link) => <RouterLink key={link.href} href={link.href} className="py-2 text-base font-medium text-gray-300 hover:text-blue-400">{link.text}</RouterLink>)}
+                  {managementLink}
                   {adminLink}
                   {authControl}
                 </div>
