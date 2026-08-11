@@ -3,6 +3,7 @@ import { loadEnvFile } from "node:process";
 import { neon } from "@neondatabase/serverless";
 import { CREATE_FINAL_CORE } from "./schema-statements";
 import { CREATE_ROLE_FIT_TABLES } from "./role-fit-schema-statements";
+import { CREATE_GOODNESS_TABLES } from "./goodness-schema-statements";
 
 if (existsSync(".env.local")) {
   delete process.env.NEON_DATABASE_URL;
@@ -35,7 +36,7 @@ function asSqlTemplate(statement: string): TemplateStringsArray {
   return strings;
 }
 
-const createStatements = [...CREATE_FINAL_CORE, ...CREATE_ROLE_FIT_TABLES];
+const createStatements = [...CREATE_FINAL_CORE, ...CREATE_ROLE_FIT_TABLES, ...CREATE_GOODNESS_TABLES];
 console.log(`Using ${selectedName} from local environment.`);
 for (const statement of createStatements) await sql(asSqlTemplate(statement));
 console.log(`Final Charter core schema applied successfully over Neon HTTPS (${createStatements.length} statements).`);
