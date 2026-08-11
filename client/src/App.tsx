@@ -16,6 +16,7 @@ import OperationsConsole from "@/pages/OperationsConsole";
 import AdminConsole from "@/pages/AdminConsole";
 import ManagementConsole from "@/pages/ManagementConsole";
 import MemberProfile from "@/pages/MemberProfile";
+import GoodnessConsole from "@/pages/GoodnessConsole";
 import QualityConsole from "@/pages/QualityConsole";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -33,6 +34,7 @@ function Router() {
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/profile" component={MemberProfile} />
       <ProtectedRoute path="/operations" component={OperationsConsole} />
+      <ProtectedRoute path="/goodness" component={GoodnessConsole} />
       <ProtectedRoute path="/quality" component={QualityConsole} />
       <ProtectedRoute path="/management" component={ManagementConsole} />
       <ProtectedRoute path="/admin" component={AdminConsole} />
