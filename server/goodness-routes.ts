@@ -6,19 +6,22 @@ import { requireAuth } from "./auth";
 import { requireCapability, writeAuthorityAudit } from "./access-control";
 import { goodnessCriteria, goodnessReviewInputSchema, goodnessReviews } from "@shared/goodness-schema";
 import { workOrders } from "@shared/operating-schema";
-import { ensureDefaultGoodnessCriteria, evaluateGoodnessGate } from "./goodness-service";
+import { ensureDefaultGoodnessCriteria, ensureGoodnessStewardRole, evaluateGoodnessGate } from "./goodness-service";
 
 export function registerGoodnessRoutes(app: Express): void {
   app.post("/api/goodness/bootstrap", requireAuth, requireCapability("goodness.manage"), async (req, res) => {
-    const criteria = await ensureDefaultGoodnessCriteria(req.member!.id);
+    const [criteria, role] = await Promise.all([
+      ensureDefaultGoodnessCriteria(req.member!.id),
+      ensureGoodnessStewardRole(),
+    ]);
     await writeAuthorityAudit({
       actor: req.member,
       authority: "goodness.manage",
-      action: "bootstrap_goodness_criteria",
-      targetType: "goodness_criteria",
-      metadata: { criterionCount: criteria.length },
+      action: "bootstrap_goodness_system",
+      targetType: "goodness",
+      metadata: { criterionCount: criteria.length, goodnessStewardRoleId: role.id },
     });
-    res.json({ ok: true, criterionCount: criteria.length });
+    res.json({ ok: true, criterionCount: criteria.length, goodnessStewardRoleId: role.id });
   });
 
   app.get("/api/goodness/criteria", requireAuth, async (_req, res) => {
