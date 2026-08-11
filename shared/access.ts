@@ -8,6 +8,8 @@ export const charterCapabilities = [
   "growth.approve",
   "work.create",
   "work.assign",
+  "goodness.review",
+  "goodness.manage",
   "quality.manage",
   "quality.override",
   "catalog.manage",
