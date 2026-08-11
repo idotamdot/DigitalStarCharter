@@ -1,0 +1,1 @@
+Vercel function routing is intentionally handled by api/index.ts and api/[...path].ts.
