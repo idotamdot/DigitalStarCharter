@@ -53,6 +53,7 @@ export const aiManagementRuns = pgTable("ai_management_runs", {
   provider: text("provider").default("rules").notNull(),
   model: text("model"),
   snapshot: jsonb("snapshot").$type<ManagementSnapshot>(),
+  executiveSummary: text("executive_summary"),
   errorMessage: text("error_message"),
   startedAt: timestamp("started_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
