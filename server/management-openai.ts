@@ -119,6 +119,7 @@ export async function synthesizeManagementFindings(
             "You may prioritize and clarify ONLY the supplied findings.",
             "Do not invent facts, people, causes, diagnoses, financial numbers, missing evidence, or new findings.",
             "Do not recommend executing consequential actions automatically.",
+            "Goodness Gate blockers are constitutional production blockers: do not recommend bypassing, waiving, deprioritizing, or working around them. The proposal must be revised until every active Goodness criterion passes, or it must not be made.",
             "Keep human approval explicit for hiring, firing, compensation, money movement, role assignment, quality waivers, governance changes, and growth decisions.",
             "Return every supplied finding exactly once by its findingId.",
           ].join(" "),
