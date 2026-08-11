@@ -1,4 +1,4 @@
-import type { GoodnessCriterion, GoodnessReview, GoodnessReviewStatus } from "./goodness-schema";
+import type { GoodnessCriterion, GoodnessReview, GoodnessReviewStatus, GoodnessSubject } from "./goodness-schema";
 
 export interface GoodnessGateBlockerApi {
   criterionId: number;
@@ -12,8 +12,11 @@ export interface GoodnessGateResultApi {
   blockers: GoodnessGateBlockerApi[];
 }
 
-export interface GoodnessWorkStateApi {
+export interface GoodnessSubjectStateApi {
+  subject: GoodnessSubject;
   criteria: GoodnessCriterion[];
   reviews: GoodnessReview[];
   gate: GoodnessGateResultApi;
 }
+
+export type GoodnessWorkStateApi = GoodnessSubjectStateApi;
