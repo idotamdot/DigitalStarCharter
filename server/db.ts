@@ -9,6 +9,7 @@ import * as operatingSchema from "@shared/operating-schema";
 import * as qualitySchema from "@shared/quality-schema";
 import * as aiManagementSchema from "@shared/ai-management-schema";
 import * as roleFitSchema from "@shared/role-fit-schema";
+import * as goodnessSchema from "@shared/goodness-schema";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -32,5 +33,6 @@ export const db = drizzle({
     ...qualitySchema,
     ...aiManagementSchema,
     ...roleFitSchema,
+    ...goodnessSchema,
   },
 });
