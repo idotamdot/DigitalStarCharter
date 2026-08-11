@@ -9,11 +9,11 @@ import { workOrders } from "@shared/operating-schema";
 import { ensureDefaultGoodnessCriteria, evaluateGoodnessGate } from "./goodness-service";
 
 export function registerGoodnessRoutes(app: Express): void {
-  app.post("/api/goodness/bootstrap", requireAuth, requireCapability("admin"), async (req, res) => {
+  app.post("/api/goodness/bootstrap", requireAuth, requireCapability("goodness.manage"), async (req, res) => {
     const criteria = await ensureDefaultGoodnessCriteria(req.member!.id);
     await writeAuthorityAudit({
       actor: req.member,
-      authority: "admin",
+      authority: "goodness.manage",
       action: "bootstrap_goodness_criteria",
       targetType: "goodness_criteria",
       metadata: { criterionCount: criteria.length },
@@ -39,7 +39,7 @@ export function registerGoodnessRoutes(app: Express): void {
     res.json({ criteria, reviews, gate });
   });
 
-  app.post("/api/goodness/reviews", requireAuth, requireCapability("admin"), async (req, res) => {
+  app.post("/api/goodness/reviews", requireAuth, requireCapability("goodness.review"), async (req, res) => {
     const input = goodnessReviewInputSchema.parse(req.body as unknown);
     const [work] = await db.select().from(workOrders).where(eq(workOrders.id, input.workOrderId)).limit(1);
     if (!work) return res.status(404).json({ message: "Work order not found" });
@@ -55,7 +55,7 @@ export function registerGoodnessRoutes(app: Express): void {
 
     await writeAuthorityAudit({
       actor: req.member,
-      authority: "admin",
+      authority: "goodness.review",
       action: "review_goodness_criterion",
       targetType: "work_order",
       targetId: input.workOrderId,
