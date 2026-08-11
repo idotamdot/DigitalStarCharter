@@ -7,8 +7,19 @@ import { evaluateGoodnessGate } from "./goodness-service";
 const gatedStatuses = new Set<WorkOrderStatus>(["ready", "in_progress", "human_review", "completed"]);
 
 export async function enforceGoodnessBeforeProduction(req: Request, res: Response, next: NextFunction) {
-  if (req.method !== "PATCH" || !/^\/api\/operating\/work\/\d+\/status\/?$/.test(req.path)) return next();
   if (!req.member) return next();
+
+  if (req.method === "POST" && /^\/api\/operating\/work\/?$/.test(req.path)) {
+    const body: unknown = req.body;
+    if (typeof body === "object" && body !== null && "status" in body && body.status !== undefined && body.status !== "planned") {
+      return res.status(409).json({
+        message: "New work must begin in planned status. It may not enter production until the Goodness Gate passes.",
+      });
+    }
+    return next();
+  }
+
+  if (req.method !== "PATCH" || !/^\/api\/operating\/work\/\d+\/status\/?$/.test(req.path)) return next();
 
   const body: unknown = req.body;
   if (typeof body !== "object" || body === null || !("status" in body) || typeof body.status !== "string") return next();
