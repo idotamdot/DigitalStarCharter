@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { members } from "./identity-schema";
 
-export type OperatingDomain = "people" | "work" | "finance" | "quality" | "growth" | "governance";
+export type OperatingDomain = "people" | "work" | "finance" | "goodness" | "quality" | "growth" | "governance";
 export type RoleAssignmentStatus = "active" | "paused" | "ended";
 export type WorkOrderStatus = "planned" | "ready" | "in_progress" | "blocked" | "human_review" | "completed" | "cancelled";
 export type DistributionStatus = "draft" | "human_review" | "approved" | "paid" | "rejected";
