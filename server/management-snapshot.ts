@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { getAccountingTotals } from "./accounting-service";
+import { evaluateGoodnessGate } from "./goodness-service";
 import { evaluateWorkQualityGate } from "./quality-service";
 import { members, memberProfiles } from "@shared/identity-schema";
 import { learningEnrollments } from "@shared/learning-schema";
@@ -13,6 +14,12 @@ export interface WorkloadByMember {
   memberId: number;
   activeWorkCount: number;
   workOrderIds: number[];
+}
+
+export interface GoodnessBlockSummary {
+  workOrderId: number;
+  blockingCount: number;
+  criterionIds: number[];
 }
 
 export interface QualityBlockSummary {
@@ -30,6 +37,7 @@ export interface ManagementContext {
   overdueWork: WorkOrder[];
   unassignedReadyWork: WorkOrder[];
   workloadByMember: WorkloadByMember[];
+  goodnessBlocks: GoodnessBlockSummary[];
   qualityBlocks: QualityBlockSummary[];
   unsafeGrowthPlanIds: number[];
 }
@@ -105,6 +113,17 @@ export async function captureManagementContext(now = new Date()): Promise<Manage
   }
   const workloadByMember = [...workloadMap.values()].sort((a, b) => b.activeWorkCount - a.activeWorkCount);
 
+  const goodnessCandidates = activeWork.filter((work) => work.status === "planned" || work.status === "blocked");
+  const goodnessBlocks = await Promise.all(goodnessCandidates.map(async (work) => {
+    const gate = await evaluateGoodnessGate(work.id);
+    return {
+      workOrderId: work.id,
+      blockingCount: gate.blockers.length,
+      criterionIds: gate.blockers.map((item) => item.criterionId),
+    } satisfies GoodnessBlockSummary;
+  }));
+  const activeGoodnessBlocks = goodnessBlocks.filter((item) => item.blockingCount > 0);
+
   const qualityCandidateWork = activeWork.filter((work) => work.status === "human_review");
   const qualityBlocks = await Promise.all(qualityCandidateWork.map(async (work) => {
     const gate = await evaluateWorkQualityGate(work.id, work.revenueType);
@@ -134,6 +153,7 @@ export async function captureManagementContext(now = new Date()): Promise<Manage
     blockedWorkCount: blockedWork.length,
     overdueWorkCount: overdueWork.length,
     unassignedReadyWorkCount: unassignedReadyWork.length,
+    openGoodnessBlockCount: activeGoodnessBlocks.reduce((sum, item) => sum + item.blockingCount, 0),
     openQualityBlockCount: activeQualityBlocks.reduce((sum, item) => sum + item.blockingCount, 0),
     activeLearningEnrollmentCount,
     revenueLast30DaysCents: recentAccounting.revenueCents,
@@ -153,6 +173,7 @@ export async function captureManagementContext(now = new Date()): Promise<Manage
     overdueWork,
     unassignedReadyWork,
     workloadByMember,
+    goodnessBlocks: activeGoodnessBlocks,
     qualityBlocks: activeQualityBlocks,
     unsafeGrowthPlanIds: growthRows.filter((plan) => plan.status === "human_review" && !plan.safeToAdd).map((plan) => plan.id),
   };
