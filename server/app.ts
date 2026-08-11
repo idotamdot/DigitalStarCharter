@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { setupAuth } from "./auth";
 import { registerAccountingRoutes } from "./accounting-routes";
 import { registerLearningRoutes } from "./learning-routes";
+import { registerManagementRoutes } from "./management-routes";
 import { registerMemberRoutes } from "./member-routes";
 import { registerOperatingRoutes } from "./operating-routes";
 import { enforceQualityBeforeCompletion } from "./quality-completion-guard";
@@ -39,6 +40,7 @@ export function createApp(): Express {
   registerLearningRoutes(app);
   registerAccountingRoutes(app);
   registerQualityRoutes(app);
+  registerManagementRoutes(app);
   registerStandardBootstrapPrerequisites(app);
   app.use(enforceQualityBeforeCompletion);
   registerOperatingRoutes(app);
