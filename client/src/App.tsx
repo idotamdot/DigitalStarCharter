@@ -14,6 +14,7 @@ import ResourceDetail from "@/pages/ResourceDetail";
 import AuthPage from "@/pages/auth-page";
 import OperationsConsole from "@/pages/OperationsConsole";
 import AdminConsole from "@/pages/AdminConsole";
+import ManagementConsole from "@/pages/ManagementConsole";
 import MemberProfile from "@/pages/MemberProfile";
 import QualityConsole from "@/pages/QualityConsole";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -33,6 +34,7 @@ function Router() {
       <ProtectedRoute path="/profile" component={MemberProfile} />
       <ProtectedRoute path="/operations" component={OperationsConsole} />
       <ProtectedRoute path="/quality" component={QualityConsole} />
+      <ProtectedRoute path="/management" component={ManagementConsole} />
       <ProtectedRoute path="/admin" component={AdminConsole} />
       <Route component={NotFound} />
     </Switch>
