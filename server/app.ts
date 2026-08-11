@@ -2,6 +2,7 @@ import express, { type Express, type NextFunction, type Request, type Response }
 import { ZodError } from "zod";
 import { setupAuth } from "./auth";
 import { registerAccountingRoutes } from "./accounting-routes";
+import { registerDecisionExecutionGuard } from "./decision-execution-guard";
 import { registerLearningRoutes } from "./learning-routes";
 import { registerManagementRoutes } from "./management-routes";
 import { registerMemberRoutes } from "./member-routes";
@@ -42,6 +43,7 @@ export function createApp(): Express {
   registerQualityRoutes(app);
   registerManagementRoutes(app);
   registerStandardBootstrapPrerequisites(app);
+  registerDecisionExecutionGuard(app);
   app.use(enforceQualityBeforeCompletion);
   registerOperatingRoutes(app);
 
