@@ -8,12 +8,13 @@ import type { AuthorityStatus, CharterCapability } from "@shared/access";
 const capabilityDomains: Partial<Record<CharterCapability, readonly string[]>> = {
   "finance.record": ["finance"],
   "growth.evaluate": ["growth", "finance", "work"],
-  "work.create": ["work", "people", "quality", "growth", "finance"],
+  "work.create": ["work", "people", "goodness", "quality", "growth", "finance"],
   "work.assign": ["work", "people"],
+  "goodness.review": ["goodness"],
   "quality.manage": ["quality"],
   "catalog.manage": ["work", "quality"],
   "learning.manage": ["people", "quality"],
-  "ai.propose": ["people", "work", "finance", "quality", "growth"],
+  "ai.propose": ["people", "work", "finance", "goodness", "quality", "growth"],
 };
 
 const adminOnly = new Set<CharterCapability>([
@@ -22,6 +23,7 @@ const adminOnly = new Set<CharterCapability>([
   "governance.manage",
   "finance.distribute",
   "growth.approve",
+  "goodness.manage",
   "quality.override",
   "ai.review",
   "ai.execute",
@@ -42,7 +44,7 @@ export async function getAccessSnapshot(member: Member): Promise<AuthorityStatus
     return {
       isAdmin: true,
       email: member.email,
-      domains: ["people", "work", "finance", "quality", "growth", "governance"],
+      domains: ["people", "work", "finance", "goodness", "quality", "growth", "governance"],
       capabilities: [
         "admin",
         "roles.assign",
@@ -53,6 +55,8 @@ export async function getAccessSnapshot(member: Member): Promise<AuthorityStatus
         "growth.approve",
         "work.create",
         "work.assign",
+        "goodness.review",
+        "goodness.manage",
         "quality.manage",
         "quality.override",
         "catalog.manage",
