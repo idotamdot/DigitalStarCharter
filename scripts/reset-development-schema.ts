@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { loadEnvFile } from "node:process";
 import { neon } from "@neondatabase/serverless";
 import { CREATE_FINAL_CORE, DROP_DEVELOPMENT_TABLES } from "./schema-statements";
+import { CREATE_ROLE_FIT_TABLES, DROP_ROLE_FIT_TABLES } from "./role-fit-schema-statements";
 
 if (process.env.NODE_ENV === "production") {
   throw new Error("Development schema reset is disabled in production");
@@ -29,7 +30,10 @@ function asSqlTemplate(statement: string): TemplateStringsArray {
   return strings;
 }
 
+const dropStatements = [...DROP_ROLE_FIT_TABLES, ...DROP_DEVELOPMENT_TABLES];
+const createStatements = [...CREATE_FINAL_CORE, ...CREATE_ROLE_FIT_TABLES];
+
 console.log("Resetting DigitalStarCharter development tables...");
-for (const statement of DROP_DEVELOPMENT_TABLES) await sql(asSqlTemplate(statement));
-for (const statement of CREATE_FINAL_CORE) await sql(asSqlTemplate(statement));
-console.log(`Development schema reset complete (${DROP_DEVELOPMENT_TABLES.length} drops, ${CREATE_FINAL_CORE.length} creates/indexes).`);
+for (const statement of dropStatements) await sql(asSqlTemplate(statement));
+for (const statement of createStatements) await sql(asSqlTemplate(statement));
+console.log(`Development schema reset complete (${dropStatements.length} drops, ${createStatements.length} creates/indexes).`);
