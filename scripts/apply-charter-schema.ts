@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { loadEnvFile } from "node:process";
 import { neon } from "@neondatabase/serverless";
 import { CREATE_FINAL_CORE } from "./schema-statements";
+import { CREATE_ROLE_FIT_TABLES } from "./role-fit-schema-statements";
 
 if (existsSync(".env.local")) {
   delete process.env.NEON_DATABASE_URL;
@@ -24,7 +25,8 @@ const selected = candidates.find(([, value]) => {
 if (!selected) throw new Error("NEON_DATABASE_URL or DATABASE_URL must contain a valid PostgreSQL URL");
 
 const [selectedName, rawConnectionString] = selected;
-const connectionString = rawConnectionString!.trim().replace(/^postgres:\/\//i, "postgresql://");
+if (!rawConnectionString) throw new Error("Selected database URL is unexpectedly empty");
+const connectionString = rawConnectionString.trim().replace(/^postgres:\/\//i, "postgresql://");
 const sql = neon(connectionString);
 
 function asSqlTemplate(statement: string): TemplateStringsArray {
@@ -33,6 +35,7 @@ function asSqlTemplate(statement: string): TemplateStringsArray {
   return strings;
 }
 
+const createStatements = [...CREATE_FINAL_CORE, ...CREATE_ROLE_FIT_TABLES];
 console.log(`Using ${selectedName} from local environment.`);
-for (const statement of CREATE_FINAL_CORE) await sql(asSqlTemplate(statement));
-console.log(`Final Charter core schema applied successfully over Neon HTTPS (${CREATE_FINAL_CORE.length} statements).`);
+for (const statement of createStatements) await sql(asSqlTemplate(statement));
+console.log(`Final Charter core schema applied successfully over Neon HTTPS (${createStatements.length} statements).`);
