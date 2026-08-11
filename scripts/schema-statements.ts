@@ -1,4 +1,6 @@
 export const DROP_DEVELOPMENT_TABLES: readonly string[] = [
+  "DROP TABLE IF EXISTS ai_manager_findings CASCADE",
+  "DROP TABLE IF EXISTS ai_management_runs CASCADE",
   "DROP TABLE IF EXISTS quality_reviews CASCADE",
   "DROP TABLE IF EXISTS quality_standards CASCADE",
   "DROP TABLE IF EXISTS authority_audit_log CASCADE",
@@ -262,6 +264,34 @@ export const CREATE_FINAL_CORE: readonly string[] = [
     executed_at timestamp,
     created_at timestamp NOT NULL DEFAULT now()
   )`,
+  `CREATE TABLE IF NOT EXISTS ai_management_runs (
+    id serial PRIMARY KEY,
+    status text NOT NULL DEFAULT 'running',
+    mode text NOT NULL DEFAULT 'deterministic',
+    requested_by_member_id integer REFERENCES members(id) ON DELETE SET NULL,
+    provider text NOT NULL DEFAULT 'rules',
+    model text,
+    snapshot jsonb,
+    error_message text,
+    started_at timestamp NOT NULL DEFAULT now(),
+    completed_at timestamp
+  )`,
+  `CREATE TABLE IF NOT EXISTS ai_manager_findings (
+    id serial PRIMARY KEY,
+    run_id integer NOT NULL REFERENCES ai_management_runs(id) ON DELETE CASCADE,
+    domain text NOT NULL,
+    finding_type text NOT NULL,
+    severity text NOT NULL,
+    title text NOT NULL,
+    summary text NOT NULL,
+    recommendation text NOT NULL,
+    rationale text NOT NULL,
+    confidence numeric NOT NULL,
+    consequence_level text NOT NULL DEFAULT 'low',
+    evidence jsonb NOT NULL DEFAULT '[]'::jsonb,
+    decision_id integer REFERENCES ai_decisions(id) ON DELETE SET NULL,
+    created_at timestamp NOT NULL DEFAULT now()
+  )`,
   `CREATE TABLE IF NOT EXISTS authority_audit_log (
     id serial PRIMARY KEY,
     actor_member_id integer REFERENCES members(id) ON DELETE SET NULL,
@@ -285,5 +315,7 @@ export const CREATE_FINAL_CORE: readonly string[] = [
   "CREATE INDEX IF NOT EXISTS learning_enrollments_member_id_idx ON learning_enrollments(member_id)",
   "CREATE INDEX IF NOT EXISTS learning_progress_member_id_idx ON learning_progress(member_id)",
   "CREATE INDEX IF NOT EXISTS ai_decisions_status_idx ON ai_decisions(status)",
+  "CREATE INDEX IF NOT EXISTS ai_management_runs_started_at_idx ON ai_management_runs(started_at)",
+  "CREATE INDEX IF NOT EXISTS ai_manager_findings_run_id_idx ON ai_manager_findings(run_id)",
   "CREATE INDEX IF NOT EXISTS authority_audit_created_at_idx ON authority_audit_log(created_at)",
 ];
