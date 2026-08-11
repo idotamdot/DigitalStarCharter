@@ -102,7 +102,7 @@ export default function ManagementConsole() {
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-300">AI observation & proposal layer</p>
             <h1 className="mt-2 flex items-center gap-3 text-4xl font-bold"><BrainCircuit className="h-9 w-9 text-violet-300" /> Management Intelligence</h1>
             <p className="mt-3 text-lg text-slate-300">
-              The managers read a frozen factual snapshot, preserve their evidence, and send consequential recommendations to human review. They do not move money, assign authority, waive quality or execute growth decisions.
+              The managers read a frozen factual snapshot, preserve their evidence, and send consequential recommendations to human review. They do not move money, assign authority, bypass Goodness, waive quality or execute growth decisions.
             </p>
           </div>
           <Button asChild variant="outline"><Link href="/admin"><ShieldCheck className="mr-2 h-4 w-4" /> Open human approvals</Link></Button>
@@ -113,7 +113,7 @@ export default function ManagementConsole() {
             <div>
               <div className="flex items-center gap-2 font-semibold"><Database className="h-5 w-5 text-violet-300" /> Factual run first</div>
               <p className="mt-2 max-w-3xl text-sm text-slate-300">
-                Deterministic managers always run from Neon data. Hybrid mode optionally asks OpenAI to prioritize and clarify those existing findings using aggregate metrics and de-identified facts; it cannot create new factual findings.
+                Deterministic managers always run from Neon data. Goodness blockers are constitutional production blockers. Hybrid mode optionally asks OpenAI to prioritize and clarify existing findings using aggregate metrics and de-identified facts; it cannot create new factual findings or recommend bypassing Goodness.
               </p>
               {status.data && !status.data.hybridConfigured && (
                 <p className="mt-2 text-xs text-amber-300">Hybrid synthesis is not configured. Deterministic management remains fully available.</p>
@@ -166,13 +166,14 @@ export default function ManagementConsole() {
           <div className="space-y-6">
             {snapshot ? (
               <>
-                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   <Metric label="Active members" value={String(snapshot.activeMemberCount)} />
                   <Metric label="Active work" value={String(snapshot.activeWorkCount)} />
                   <Metric label="Operating cash" value={money(snapshot.operatingCashCents)} />
                   <Metric label="Reserve cash" value={money(snapshot.reserveCashCents)} />
                   <Metric label="30-day revenue" value={money(snapshot.revenueLast30DaysCents)} />
                   <Metric label="30-day expense" value={money(snapshot.expenseLast30DaysCents)} />
+                  <Metric label="Goodness blockers" value={String(snapshot.openGoodnessBlockCount)} />
                   <Metric label="Quality blockers" value={String(snapshot.openQualityBlockCount)} />
                   <Metric label="Reserve runway" value={snapshot.reserveRunwayMonths === null ? "No expense baseline" : `${snapshot.reserveRunwayMonths.toFixed(1)} mo`} />
                 </section>
