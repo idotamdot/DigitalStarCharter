@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "./db";
 import { captureManagementContext } from "./management-snapshot";
+import { generateGoodnessFindings } from "./management-goodness-rule";
 import { generateDeterministicFindings, type DeterministicFinding } from "./management-rules";
 import {
   openAiManagementConfigured,
@@ -68,7 +69,10 @@ export async function runManagementCycle(
 
   try {
     const context = await captureManagementContext();
-    const deterministic = generateDeterministicFindings(context);
+    const deterministic = [
+      ...generateGoodnessFindings(context),
+      ...generateDeterministicFindings(context),
+    ];
     let synthesisSummary: string | null = deterministicSummary(deterministic);
     let synthesisError: string | null = null;
 
