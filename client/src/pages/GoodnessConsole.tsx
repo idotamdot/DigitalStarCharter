@@ -43,9 +43,10 @@ export default function GoodnessConsole() {
 
   const review = useMutation({
     mutationFn: ({ criterionId, status }: { criterionId: number; status: GoodnessReviewStatus }) => {
-      if (!selectedWorkId) throw new Error("Select proposed work first");
+      const subjectId = goodness.data?.subject.id;
+      if (!subjectId) throw new Error("Select proposed work first");
       return apiRequest("POST", "/api/goodness/reviews", {
-        workOrderId: selectedWorkId,
+        subjectId,
         criterionId,
         status,
         evidence: evidence[criterionId]?.trim() || null,
