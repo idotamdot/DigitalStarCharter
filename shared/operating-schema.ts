@@ -168,7 +168,10 @@ export const insertDistributionPeriodSchema = createInsertSchema(distributionPer
 
 export const insertGrowthPlanSchema = createInsertSchema(growthPlans, {
   status: growthPlanStatusSchema,
-}).omit({ id: true, safeToAdd: true, analysis: true, approvedAt: true, createdAt: true });
+}).omit({ id: true, safeToAdd: true, analysis: true, approvedAt: true, createdAt: true }).required({
+  recurringMonthlyRevenueCents: true,
+  recurringMonthlyCostsCents: true,
+});
 
 export const insertAiDecisionSchema = createInsertSchema(aiDecisions, {
   domain: operatingDomainSchema,
