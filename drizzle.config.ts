@@ -31,6 +31,7 @@ export default defineConfig({
     "./shared/quality-schema.ts",
     "./shared/ai-management-schema.ts",
     "./shared/role-fit-schema.ts",
+    "./shared/goodness-schema.ts",
   ],
   dialect: "postgresql",
   dbCredentials: {
