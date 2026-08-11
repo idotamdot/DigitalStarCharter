@@ -1,6 +1,7 @@
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "./db";
 import { goodnessCriteria, goodnessReviews, type GoodnessCriterion, type GoodnessReview } from "@shared/goodness-schema";
+import { charterRoles, type CharterRole } from "@shared/operating-schema";
 
 interface GoodnessCriterionSeed {
   key: string;
@@ -98,6 +99,21 @@ export async function ensureDefaultGoodnessCriteria(createdByMemberId: number): 
     })));
   }
   return db.select().from(goodnessCriteria).orderBy(goodnessCriteria.id);
+}
+
+export async function ensureGoodnessStewardRole(): Promise<CharterRole> {
+  const [existing] = await db.select().from(charterRoles).where(eq(charterRoles.name, "Goodness Steward")).limit(1);
+  if (existing) return existing;
+
+  const [created] = await db.insert(charterRoles).values({
+    name: "Goodness Steward",
+    domain: "goodness",
+    description: "Evaluates proposed work against the Charter's Goodness criteria before production begins and requires revision when the proposal does not pass.",
+    revenueResponsibility: "Protects the network from earning revenue through products, services or practices that violate its constitutional Goodness floor.",
+    humanAuthority: true,
+    active: true,
+  }).returning();
+  return created;
 }
 
 export async function evaluateGoodnessGate(workOrderId: number): Promise<GoodnessGateResult> {
