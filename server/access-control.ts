@@ -1,11 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import { and, eq } from "drizzle-orm";
 import { db } from "./db";
-import { charterRoles, roleAssignments, authorityAuditLog } from "@shared/operating-schema";
+import { charterRoles, roleAssignments, authorityAuditLog, type OperatingDomain } from "@shared/operating-schema";
 import type { Member } from "@shared/identity-schema";
 import type { AuthorityStatus, CharterCapability } from "@shared/access";
 
-const capabilityDomains: Partial<Record<CharterCapability, readonly string[]>> = {
+const capabilityDomains: Partial<Record<CharterCapability, readonly OperatingDomain[]>> = {
   "finance.record": ["finance"],
   "growth.evaluate": ["growth", "finance", "work"],
   "work.create": ["work", "people", "goodness", "quality", "growth", "finance"],
@@ -79,7 +79,7 @@ export async function getAccessSnapshot(member: Member): Promise<AuthorityStatus
       eq(charterRoles.humanAuthority, true),
     ));
 
-  const domains = [...new Set(rows.map((row) => row.domain))];
+  const domains: OperatingDomain[] = [...new Set(rows.map((row) => row.domain))];
   const capabilities = (Object.keys(capabilityDomains) as CharterCapability[]).filter((capability) => {
     const allowedDomains = capabilityDomains[capability] ?? [];
     return allowedDomains.some((domain) => domains.includes(domain));
