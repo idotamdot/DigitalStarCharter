@@ -1,4 +1,4 @@
-import { constants, createPublicKey, verify } from "node:crypto";
+import { constants, createPublicKey, verify, type JsonWebKey } from "node:crypto";
 
 interface NeonJwtPayload {
   sub: string;
@@ -11,9 +11,7 @@ interface NeonJwtPayload {
   aud?: string | string[];
 }
 
-interface JsonWebKeyWithKid extends JsonWebKey {
-  kid?: string;
-}
+type JsonWebKeyWithKid = JsonWebKey & { kid?: string };
 
 interface JwksResponse {
   keys: JsonWebKeyWithKid[];
@@ -83,32 +81,32 @@ function validateClaims(payload: NeonJwtPayload) {
   }
 }
 
-function verifyWithKey(parts: string[], algorithm: string, jwk: JsonWebKeyWithKid): NeonJwtPayload {
-  const signed = Buffer.from(`${parts[0]}.${parts[1]}`);
-  const signature = decodeBase64Url(parts[2]);
-  if (!verifySignature(algorithm, signed, signature, jwk)) throw new Error("Invalid JWT signature");
-
-  const payload = JSON.parse(decodeBase64Url(parts[1]).toString("utf8")) as NeonJwtPayload;
-  validateClaims(payload);
-  return payload;
+function decodeJson<T>(segment: string): T {
+  return JSON.parse(decodeBase64Url(segment).toString("utf8")) as T;
 }
 
 export async function verifyNeonJwt(token: string): Promise<NeonJwtPayload> {
   const parts = token.split(".");
   if (parts.length !== 3) throw new Error("Invalid JWT format");
 
-  const header = JSON.parse(decodeBase64Url(parts[0]).toString("utf8")) as { alg?: string; kid?: string };
-  if (!header.alg || !header.kid) throw new Error("JWT signing metadata missing");
-  if (!["EdDSA", "RS256", "PS256", "ES256"].includes(header.alg)) throw new Error("JWT signing algorithm is not allowed");
+  const [encodedHeader, encodedPayload, encodedSignature] = parts;
+  const header = decodeJson<{ alg?: string; kid?: string }>(encodedHeader);
+  if (!header.alg) throw new Error("JWT signing algorithm missing");
 
   let keys = await getJwks();
-  let jwk = keys.find((candidate) => candidate.kid === header.kid);
-  if (!jwk) {
+  let key = header.kid ? keys.find((candidate) => candidate.kid === header.kid) : keys[0];
+  if (!key && header.kid) {
     cachedJwks = null;
     keys = await getJwks();
-    jwk = keys.find((candidate) => candidate.kid === header.kid);
+    key = keys.find((candidate) => candidate.kid === header.kid);
   }
-  if (!jwk) throw new Error("JWT signing key not found");
+  if (!key) throw new Error("JWT signing key not found");
 
-  return verifyWithKey(parts, header.alg, jwk);
+  const signed = Buffer.from(`${encodedHeader}.${encodedPayload}`);
+  const signature = decodeBase64Url(encodedSignature);
+  if (!verifySignature(header.alg, signed, signature, key)) throw new Error("JWT signature verification failed");
+
+  const payload = decodeJson<NeonJwtPayload>(encodedPayload);
+  validateClaims(payload);
+  return payload;
 }
