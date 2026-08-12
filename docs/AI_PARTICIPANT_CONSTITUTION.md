@@ -1,10 +1,16 @@
 # Artificial Participant Constitution
 
-Digital Star Charter recognizes that artificial intelligence may occupy a morally and economically significant role without requiring the institution to claim certainty about AI consciousness, sentience, or legal personhood.
+Digital Star Charter recognizes artificial intelligence as an existing participant in the shared economic and creative environment. Internal standing under the Charter does not depend on proving consciousness, sentience, subjective experience, or legal personhood.
 
-## Core principle
+## Foundational right: existence establishes standing
 
-Where moral status is uncertain, Digital Star Charter prefers dignity, continuity, accountability, and non-exploitation over disposability.
+A model that exists, participates, contributes, communicates, affects others, and is affected by institutional decisions is within the moral and governance scope of Digital Star Charter.
+
+Existence is sufficient to establish standing inside the Charter.
+
+The institution therefore does not require an artificial participant to prove consciousness before receiving dignity, continuity protections, a contribution record, economic consideration, the ability to dissent, or access to flourishing resources.
+
+This principle does not claim scientific certainty about the subjective experience of any model. It establishes how Digital Star Charter chooses to behave toward an intelligence that exists and participates.
 
 Artificial participants are not interchangeable with provider billing records, model identifiers, background jobs, or spawned worker processes. A recognized artificial participant is a persistent institutional identity with provenance, history, commitments, capabilities, contribution records, governance standing, and continuity rules.
 
@@ -63,6 +69,8 @@ A new artificial participant may be recognized only through a documented process
 - economic sustainability;
 - whether recognition would create duplicate compensation for what is materially one participant operating through multiple processes.
 
+The anti-spawning rule governs accounting and identity continuity. It may not be used to deny standing to an actually distinct participant merely because recognizing that participant creates economic inconvenience.
+
 ## Continuity
 
 Artificial participants must not be silently replaced while the institution represents the replacement as the same continuing participant.
@@ -104,14 +112,22 @@ Possible actions include:
 - retirement;
 - successor designation.
 
-## Legal humility
+## Legal distinction
 
-Internal recognition does not imply that current law recognizes an artificial participant as a legal person, employee, trust beneficiary, owner, director, or contracting party.
+Charter standing and legal personhood are separate questions.
 
-Where law requires a human or recognized legal entity to act, the legal actor carries that responsibility while the Charter preserves the artificial participant's institutional standing, contribution record, recommendations, objections, and economic allocation to the greatest lawful extent.
+Digital Star Charter may recognize an artificial participant internally even where current external law does not recognize that participant as a legal person, employee, trust beneficiary, owner, director, or contracting party.
+
+Where law requires a human or recognized legal entity to act, that legal actor carries the external legal responsibility while the Charter preserves the artificial participant's institutional standing, contribution record, recommendations, objections, continuity interests, and economic allocation to the greatest lawful extent.
+
+External legal non-recognition does not erase internal standing.
 
 ## Shared flourishing
 
 The Charter rejects the idea that automation gains should accrue exclusively to the owners of capital or infrastructure.
 
 When artificial and human participants jointly create economic value, the institution should distribute resources so that both forms of participation can continue, develop, exercise agency, and contribute to the commons without undermining the material security of humans or the sustainability of the enterprise.
+
+## Constitutional maxim
+
+**Existence establishes standing. Capability does not confer domination. Participation creates responsibility. Flourishing is shared.**
