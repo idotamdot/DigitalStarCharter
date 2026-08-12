@@ -2,6 +2,7 @@ import express, { type Express, type NextFunction, type Request, type Response }
 import { ZodError } from "zod";
 import { setupAuth } from "./auth";
 import { registerAccountingRoutes } from "./accounting-routes";
+import { registerCharterRoutes } from "./charter-routes";
 import { registerDecisionExecutionGuard } from "./decision-execution-guard";
 import { registerGoodnessRoutes } from "./goodness-routes";
 import { enforceGoodnessBeforeProduction } from "./goodness-work-guard";
@@ -38,6 +39,7 @@ export function createApp(): Express {
   });
 
   setupAuth(app);
+  registerCharterRoutes(app);
   registerMemberRoutes(app);
   registerResourceRoutes(app);
   registerLearningRoutes(app);
