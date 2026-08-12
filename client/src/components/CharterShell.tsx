@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import {
+  BriefcaseBusiness,
   Building2,
   Compass,
   Eye,
@@ -28,6 +29,7 @@ interface NavigationItem {
 const navigation: readonly NavigationItem[] = [
   { href: "/", label: "Charter", icon: Compass },
   { href: "/prototype", label: "Prototype", icon: FlaskConical },
+  { href: "/work", label: "USE Work", icon: BriefcaseBusiness },
   { href: "/observatory", label: "Human Needs", icon: Eye },
   { href: "/studio", label: "Venture Studio", icon: Sparkles },
   { href: "/office", label: "Shared Office", icon: Building2 },
