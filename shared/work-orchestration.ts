@@ -127,6 +127,124 @@ function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
+function objectiveStem(objective: WorkObjective): string {
+  const trimmed = objective.title.trim();
+  return trimmed.length > 0 ? trimmed : "the objective";
+}
+
+export function generateWorkItemsFromObjective(objective: WorkObjective): readonly GeneratedWorkItem[] {
+  const stem = objectiveStem(objective);
+  const discoveryId = `${objective.id}-discovery`;
+  const analysisId = `${objective.id}-analysis`;
+  const designId = `${objective.id}-design`;
+  const deliveryId = `${objective.id}-delivery`;
+  const reviewId = `${objective.id}-review`;
+
+  return [
+    {
+      id: discoveryId,
+      objectiveId: objective.id,
+      title: `Clarify requirements and current reality for: ${stem}`,
+      definitionOfDone: [
+        "Stakeholders, constraints, and success conditions are documented",
+        "Known facts are separated from assumptions",
+        "Material accessibility and Goodness requirements are identified",
+      ],
+      requiredCapabilities: ["discovery", "relationship interviewing", "evidence capture"],
+      requiredAuthority: "recommend",
+      preferredParticipantKind: "human",
+      estimatedEffortHours: 2,
+      dependsOnWorkItemIds: [],
+      status: "ready",
+      assigneeParticipantId: null,
+      reviewerParticipantIds: [],
+      requiresHumanJudgment: true,
+      requiresArtificialAnalysis: false,
+    },
+    {
+      id: analysisId,
+      objectiveId: objective.id,
+      title: `Analyze evidence, risks, and leverage points for: ${stem}`,
+      definitionOfDone: [
+        "Evidence and assumptions are summarized",
+        "Risks, repetitive work, and automation candidates are identified",
+        "Unknowns that require human follow-up are explicit",
+      ],
+      requiredCapabilities: ["analysis", "pattern recognition", "risk identification"],
+      requiredAuthority: "recommend",
+      preferredParticipantKind: "artificial",
+      estimatedEffortHours: 1,
+      dependsOnWorkItemIds: [discoveryId],
+      status: "proposed",
+      assigneeParticipantId: null,
+      reviewerParticipantIds: [],
+      requiresHumanJudgment: false,
+      requiresArtificialAnalysis: true,
+    },
+    {
+      id: designId,
+      objectiveId: objective.id,
+      title: `Design the human-AI operating plan for: ${stem}`,
+      definitionOfDone: [
+        "Human and artificial responsibilities are explicit",
+        "Authority and escalation boundaries are explicit",
+        "The plan satisfies objective constraints and Goodness requirements",
+      ],
+      requiredCapabilities: ["operations design", "collaboration design", "exception handling"],
+      requiredAuthority: "recommend",
+      preferredParticipantKind: "either",
+      estimatedEffortHours: 2,
+      dependsOnWorkItemIds: [discoveryId, analysisId],
+      status: "proposed",
+      assigneeParticipantId: null,
+      reviewerParticipantIds: [],
+      requiresHumanJudgment: true,
+      requiresArtificialAnalysis: true,
+    },
+    {
+      id: deliveryId,
+      objectiveId: objective.id,
+      title: `Execute the approved reversible work for: ${stem}`,
+      definitionOfDone: [
+        objective.outcome.trim().length > 0 ? objective.outcome : "The agreed outcome is delivered",
+        "Execution evidence is attached",
+        "Exceptions and deviations are recorded",
+      ],
+      requiredCapabilities: ["execution", "coordination", "documentation"],
+      requiredAuthority: "execute_reversible",
+      preferredParticipantKind: "either",
+      estimatedEffortHours: 4,
+      dependsOnWorkItemIds: [designId],
+      status: "proposed",
+      assigneeParticipantId: null,
+      reviewerParticipantIds: [],
+      requiresHumanJudgment: true,
+      requiresArtificialAnalysis: true,
+    },
+    {
+      id: reviewId,
+      objectiveId: objective.id,
+      title: `Quality, Goodness, and Success Mapping review for: ${stem}`,
+      definitionOfDone: [
+        "Definition of done is verified",
+        "Goodness and representation concerns are resolved or escalated",
+        "Human and artificial contributions are recorded in Success Mapping",
+        "Learning is captured for the next work cycle",
+      ],
+      requiredCapabilities: ["quality assurance", "goodness review", "success mapping"],
+      requiredAuthority: "approve",
+      preferredParticipantKind: "human",
+      estimatedEffortHours: 1,
+      dependsOnWorkItemIds: [deliveryId],
+      status: "proposed",
+      assigneeParticipantId: null,
+      reviewerParticipantIds: [],
+      requiresHumanJudgment: true,
+      requiresArtificialAnalysis: true,
+    },
+  ];
+}
+
 export function routeWorkItem(
   workItem: GeneratedWorkItem,
   candidates: readonly TaskRoutingCandidate[],
