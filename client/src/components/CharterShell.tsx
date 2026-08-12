@@ -6,11 +6,11 @@ import {
   Eye,
   FlaskConical,
   HeartHandshake,
-  Landmark,
   Menu,
   Orbit,
   Scale,
   Sparkles,
+  Star,
   UsersRound,
   X,
 } from "lucide-react";
@@ -53,7 +53,7 @@ function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             className={`flex items-center gap-2 rounded-full px-3 py-2 text-sm transition ${
               active
-                ? "bg-white/12 text-white ring-1 ring-white/20"
+                ? "bg-white/12 text-white ring-1 ring-fuchsia-200/25 shadow-[0_0_24px_rgba(232,121,249,0.12)]"
                 : "text-slate-300 hover:bg-white/8 hover:text-white"
             }`}
           >
@@ -70,21 +70,31 @@ export default function CharterShell({ children }: CharterShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#07100d] text-slate-100">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#03040c] text-slate-100">
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -left-40 -top-48 h-[32rem] w-[32rem] rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="absolute right-[-10rem] top-[20%] h-[30rem] w-[30rem] rounded-full bg-amber-400/8 blur-3xl" />
-        <div className="absolute bottom-[-14rem] left-[30%] h-[36rem] w-[36rem] rounded-full bg-cyan-400/6 blur-3xl" />
+        <div className="absolute inset-0 opacity-80 stars-small" />
+        <div className="absolute inset-0 opacity-70 stars-medium" />
+        <div className="absolute inset-0 opacity-60 stars-large" />
+        <div className="absolute left-[8%] top-[14%] h-1 w-1 rounded-full bg-fuchsia-200 shadow-[0_0_18px_5px_rgba(244,114,182,0.55)]" />
+        <div className="absolute right-[16%] top-[24%] h-1.5 w-1.5 rounded-full bg-cyan-100 shadow-[0_0_22px_6px_rgba(103,232,249,0.45)]" />
+        <div className="absolute bottom-[18%] left-[38%] h-1 w-1 rounded-full bg-amber-100 shadow-[0_0_20px_6px_rgba(253,230,138,0.4)]" />
+        <div className="absolute -left-40 -top-48 h-[32rem] w-[32rem] rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <div className="absolute right-[-10rem] top-[20%] h-[30rem] w-[30rem] rounded-full bg-cyan-400/9 blur-3xl" />
+        <div className="absolute bottom-[-14rem] left-[30%] h-[36rem] w-[36rem] rounded-full bg-violet-500/8 blur-3xl" />
+        <svg className="absolute inset-0 h-full w-full opacity-[0.12]" viewBox="0 0 1200 800" preserveAspectRatio="none">
+          <path d="M85 160 L220 230 L350 150 L470 270 L640 215 L790 340 L945 250 L1115 310" fill="none" stroke="currentColor" strokeWidth="1" className="text-cyan-100" />
+          <path d="M170 620 L315 520 L485 605 L640 500 L810 585 L1015 470" fill="none" stroke="currentColor" strokeWidth="1" className="text-fuchsia-100" />
+        </svg>
       </div>
 
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#07100d]/88 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#040611]/86 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-3 sm:px-6 lg:px-8">
           <Link href="/" className="flex min-w-0 items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-emerald-300/30 bg-emerald-300/10 shadow-[0_0_30px_rgba(110,231,183,0.12)]">
-              <Landmark className="h-5 w-5 text-emerald-200" aria-hidden="true" />
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-fuchsia-200/30 bg-fuchsia-300/10 shadow-[0_0_34px_rgba(232,121,249,0.18)]">
+              <Star className="h-5 w-5 fill-fuchsia-100/20 text-fuchsia-100" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold tracking-[0.22em] text-emerald-100">DIGITAL STAR CHARTER</p>
+              <p className="truncate text-sm font-semibold tracking-[0.22em] text-fuchsia-100">DIGITAL STAR CHARTER</p>
               <p className="truncate text-xs text-slate-400">Human + artificial flourishing infrastructure</p>
             </div>
           </Link>
@@ -105,7 +115,7 @@ export default function CharterShell({ children }: CharterShellProps) {
         </div>
 
         {mobileOpen ? (
-          <div className="border-t border-white/10 px-4 py-3 xl:hidden">
+          <div className="border-t border-white/10 bg-[#040611]/95 px-4 py-3 xl:hidden">
             <NavigationLinks onNavigate={() => setMobileOpen(false)} />
           </div>
         ) : null}
@@ -113,11 +123,11 @@ export default function CharterShell({ children }: CharterShellProps) {
 
       <main className="relative z-10">{children}</main>
 
-      <footer className="relative z-10 border-t border-white/10">
+      <footer className="relative z-10 border-t border-white/10 bg-[#040611]/70 backdrop-blur-md">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 text-sm text-slate-400 sm:px-6 md:grid-cols-3 lg:px-8">
           <div>
             <div className="mb-3 flex items-center gap-2 text-slate-200">
-              <HeartHandshake className="h-4 w-4 text-emerald-300" />
+              <HeartHandshake className="h-4 w-4 text-fuchsia-200" />
               <span className="font-medium">Shared flourishing</span>
             </div>
             <p>Automation removes unwanted labor before it removes human livelihood.</p>
