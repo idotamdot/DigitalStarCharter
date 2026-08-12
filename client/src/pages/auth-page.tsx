@@ -52,6 +52,14 @@ const AuthPage = () => {
     event.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) return;
+    if (!neonAuth) {
+      toast({
+        title: "Sign-in is not configured",
+        description: "The public Charter is available, but Neon Auth is not configured for this deployment.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSending(true);
     try {
@@ -87,13 +95,7 @@ const AuthPage = () => {
         <section>
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-sm text-cyan-100"><ShieldCheck className="h-4 w-4" /> Neon Auth · passwordless</div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">One secure link. No password to remember.</h1>
-          <p className="mt-5 max-w-xl text-lg text-slate-300">DigitalStarCharter uses Neon Auth as its sole identity authority. Enter your email and we will send a magic link. After verification, you return to the work you were trying to open.</p>
-          <div className="mt-8 space-y-3 text-sm text-slate-300">
-            <p>• There is no DigitalStarCharter password database.</p>
-            <p>• Protected API calls carry a Neon-issued JWT that the server verifies against Neon’s signing keys.</p>
-            <p>• The verified identity maps to one Charter member record and its server-enforced capabilities.</p>
-            <p>• Consequential actions still follow the Human-in-the-loop approval model.</p>
-          </div>
+          <p className="mt-5 max-w-xl text-lg text-slate-300">DigitalStarCharter uses Neon Auth as its identity authority for protected areas. The public Charter remains available even when authentication is unavailable.</p>
         </section>
 
         <Card className="border-cyan-400/20 bg-slate-900/90 text-white shadow-2xl shadow-cyan-950/30">
@@ -102,7 +104,11 @@ const AuthPage = () => {
             <CardDescription className="text-slate-400">We will return you to {returnTo} after Neon verifies the link.</CardDescription>
           </CardHeader>
           <CardContent>
-            {sentTo ? (
+            {!neonAuth ? (
+              <div className="rounded-lg border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
+                Authentication is not configured for this deployment. Public Charter pages remain available.
+              </div>
+            ) : sentTo ? (
               <div className="space-y-5">
                 <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-4"><p className="font-medium text-emerald-100">Check your email</p><p className="mt-1 text-sm text-emerald-100/80">A sign-in link was sent to <strong>{sentTo}</strong>. Use the newest link if you request more than one.</p></div>
                 <Button variant="outline" className="w-full" onClick={() => setSentTo(null)}>Use a different email</Button>
