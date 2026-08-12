@@ -2,7 +2,7 @@ import { createContext, type ReactNode, useContext, useEffect, useState } from "
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import type { Member } from "@shared/identity-schema";
 import { apiRequest, queryClient } from "../lib/queryClient";
-import { neonAuth } from "@/lib/neon-auth";
+import { isNeonAuthConfigured, neonAuth } from "@/lib/neon-auth";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextValue {
@@ -16,9 +16,36 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export { AuthContext };
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+function DisabledAuthProvider({ children }: { children: ReactNode }) {
+  const logoutMutation = useMutation<void, Error, void>({
+    mutationFn: async () => {
+      throw new Error("Neon Auth is not configured for this deployment.");
+    },
+  });
+
+  return (
+    <AuthContext.Provider
+      value={{
+        member: null,
+        isLoading: false,
+        error: new Error("Neon Auth is not configured for this deployment."),
+        logoutMutation,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+function ConfiguredAuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const session = neonAuth.useSession();
+  const configuredNeonAuth = neonAuth;
+
+  if (!configuredNeonAuth) {
+    return <DisabledAuthProvider>{children}</DisabledAuthProvider>;
+  }
+
+  const session = configuredNeonAuth.useSession();
   const [member, setMember] = useState<Member | null>(null);
   const [isResolvingMember, setIsResolvingMember] = useState(false);
   const [memberError, setMemberError] = useState<Error | null>(null);
@@ -60,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      const result = await neonAuth.signOut();
+      const result = await configuredNeonAuth.signOut();
       if (result.error) throw new Error(result.error.message || "Unable to sign out");
     },
     onSuccess: () => {
@@ -87,6 +114,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  if (!isNeonAuthConfigured) {
+    return <DisabledAuthProvider>{children}</DisabledAuthProvider>;
+  }
+
+  return <ConfiguredAuthProvider>{children}</ConfiguredAuthProvider>;
 }
 
 export function useAuth(): AuthContextValue {
