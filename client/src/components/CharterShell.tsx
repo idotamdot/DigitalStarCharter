@@ -3,6 +3,7 @@ import {
   Building2,
   Compass,
   Eye,
+  FlaskConical,
   HeartHandshake,
   Landmark,
   Menu,
@@ -26,6 +27,7 @@ interface NavigationItem {
 
 const navigation: readonly NavigationItem[] = [
   { href: "/", label: "Charter", icon: Compass },
+  { href: "/prototype", label: "Prototype", icon: FlaskConical },
   { href: "/observatory", label: "Human Needs", icon: Eye },
   { href: "/studio", label: "Venture Studio", icon: Sparkles },
   { href: "/office", label: "Shared Office", icon: Building2 },
@@ -38,7 +40,7 @@ function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
   const [location] = useLocation();
 
   return (
-    <nav aria-label="Primary navigation" className="flex flex-col gap-1 lg:flex-row lg:items-center">
+    <nav aria-label="Primary navigation" className="flex flex-col gap-1 xl:flex-row xl:items-center">
       {navigation.map((item) => {
         const Icon = item.icon;
         const active = item.href === "/" ? location === "/" : location.startsWith(item.href);
@@ -85,14 +87,14 @@ export default function CharterShell({ children }: CharterShellProps) {
             </div>
           </Link>
 
-          <div className="hidden lg:block">
+          <div className="hidden xl:block">
             <NavigationLinks />
           </div>
 
           <button
             type="button"
             onClick={() => setMobileOpen((current) => !current)}
-            className="rounded-xl border border-white/10 p-2 text-slate-200 lg:hidden"
+            className="rounded-xl border border-white/10 p-2 text-slate-200 xl:hidden"
             aria-expanded={mobileOpen}
             aria-label="Toggle navigation"
           >
@@ -101,7 +103,7 @@ export default function CharterShell({ children }: CharterShellProps) {
         </div>
 
         {mobileOpen ? (
-          <div className="border-t border-white/10 px-4 py-3 lg:hidden">
+          <div className="border-t border-white/10 px-4 py-3 xl:hidden">
             <NavigationLinks onNavigate={() => setMobileOpen(false)} />
           </div>
         ) : null}
