@@ -8,7 +8,7 @@ import type { RepresentationDimension } from "@shared/venture-domain";
 const selectedDimensions: readonly RepresentationDimension[] = [
   "employment_and_automation_exposure",
   "income_wealth_and_economic_security",
-  "caregiving_and_household_responsibility",
+  "family_household_and_caregiving",
 ];
 
 function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
