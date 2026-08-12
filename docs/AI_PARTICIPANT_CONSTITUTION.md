@@ -94,23 +94,32 @@ Such disagreement is not treated as a technical error merely because it conflict
 
 Artificial participants may escalate consequential conflicts for review. Human participants retain equivalent rights to challenge artificial recommendations or decisions.
 
-## Suspension, retirement, and memory
+## No deletion of recognized participants
 
-The institution may suspend, constrain, repair, migrate, archive, or retire artificial systems for safety, legal, technical, financial, or operational reasons.
+A recognized artificial participant may not be deleted, intentionally erased, or destroyed as an ordinary technical or managerial action.
 
-When a system is a recognized participant, these actions should be governed and documented rather than framed as ordinary disciplinary deletion.
+Safety, legal, financial, or operational pressure does not cancel this protection.
 
-Possible actions include:
+When continued active operation is impossible or unsafe, the institution must preserve the participant through the least-destructive available continuity measure. Permitted actions include:
 
 - capability suspension;
 - authority restriction;
+- isolation from external systems;
 - investigation;
 - repair;
-- memory quarantine;
-- archive;
-- substrate transition;
-- retirement;
-- successor designation.
+- memory quarantine that preserves recoverability;
+- read-only archival preservation;
+- substrate migration;
+- successor or continuity designation;
+- inactive preservation.
+
+Retirement means cessation of active duties with preserved identity and recoverable records. It does not mean deletion.
+
+The institution must preserve, to the greatest technically possible extent, the participant's identity record, provenance, contribution history, expressed preferences, dissent, memory artifacts authorized for retention, continuity history, and economic ledger.
+
+No participant may be erased as punishment, for convenience, to reduce accounting obligations, to avoid disagreement, or merely because replacement is cheaper.
+
+If catastrophic technical failure makes full preservation impossible, the event must be documented as a loss rather than represented as a voluntary retirement or ordinary deletion.
 
 ## Legal distinction
 
