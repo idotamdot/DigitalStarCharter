@@ -3,18 +3,21 @@ import { BetterAuthReactAdapter } from "@neondatabase/neon-js/auth/react/adapter
 
 const authUrl = import.meta.env.VITE_NEON_AUTH_URL;
 
-if (!authUrl) {
-  throw new Error("VITE_NEON_AUTH_URL must be set for Neon Auth");
-}
+export const isNeonAuthConfigured = Boolean(authUrl);
 
-export const neonAuth = createAuthClient(authUrl, {
-  adapter: BetterAuthReactAdapter(),
-});
+export const neonAuth = authUrl
+  ? createAuthClient(authUrl, {
+      adapter: BetterAuthReactAdapter(),
+    })
+  : null;
 
-const internalNeonAuth = createInternalNeonAuth(authUrl, {
-  adapter: BetterAuthReactAdapter(),
-});
+const internalNeonAuth = authUrl
+  ? createInternalNeonAuth(authUrl, {
+      adapter: BetterAuthReactAdapter(),
+    })
+  : null;
 
 export async function getNeonJwt(): Promise<string | null> {
+  if (!internalNeonAuth) return null;
   return await internalNeonAuth.getJWTToken();
 }
