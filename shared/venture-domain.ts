@@ -28,9 +28,12 @@ export const evidenceKinds = [
 export type EvidenceKind = typeof evidenceKinds[number];
 
 export const lifecycleStages = [
+  "people",
+  "capabilities",
   "need",
   "evidence",
   "opportunity",
+  "collaboration_design",
   "feasibility",
   "charter",
   "goodness",
@@ -39,10 +42,58 @@ export const lifecycleStages = [
   "launch",
   "operations",
   "outcomes",
+  "flourishing",
   "learning",
 ] as const;
 
 export type LifecycleStage = typeof lifecycleStages[number];
+
+export const representationDimensions = [
+  "age_and_life_stage",
+  "sex_and_gender",
+  "sexual_orientation",
+  "race_ethnicity_and_culture",
+  "religion_belief_and_worldview",
+  "language_and_communication",
+  "nationality_citizenship_and_legal_status",
+  "migration_displacement_and_refugee_status",
+  "income_wealth_and_economic_security",
+  "employment_and_automation_exposure",
+  "education_and_literacy",
+  "profession_trade_and_lived_expertise",
+  "family_household_and_caregiving",
+  "housing_and_homelessness",
+  "urban_rural_remote_and_geography",
+  "country_and_regional_development_context",
+  "digital_access_and_device_constraints",
+  "banking_credit_and_financial_access",
+  "transportation_and_mobility_access",
+  "physical_disability",
+  "vision",
+  "hearing",
+  "speech_and_communication_disability",
+  "cognitive_and_learning_disability",
+  "neurodivergence",
+  "mental_health",
+  "chronic_illness_and_energy_limitation",
+  "temporary_injury_or_impairment",
+  "pregnancy_and_reproductive_context",
+  "healthcare_access",
+  "safety_violence_and_exploitation_risk",
+  "incarceration_and_reentry",
+  "military_veteran_and_service_family_context",
+  "indigenous_and_land_based_community_context",
+  "climate_and_environmental_exposure",
+  "infrastructure_reliability",
+  "time_availability_and_shift_constraints",
+  "privacy_and_surveillance_risk",
+  "technology_confidence",
+  "political_and_civic_power",
+  "proprietor_worker_customer_and_community_role",
+  "future_generations_and_nonhuman_environment",
+] as const;
+
+export type RepresentationDimension = typeof representationDimensions[number];
 
 export interface MoneyAmount {
   currency: string;
@@ -66,6 +117,47 @@ export interface PersonaPerspective {
   goals: readonly string[];
   vulnerabilities: readonly string[];
   accessibilityConsiderations: readonly string[];
+}
+
+export interface RepresentationPerspective {
+  id: string;
+  label: string;
+  dimensions: readonly RepresentationDimension[];
+  context: readonly string[];
+  needs: readonly string[];
+  risks: readonly string[];
+  accommodations: readonly string[];
+  mustBeConsultedWhen: readonly string[];
+}
+
+export interface RepresentationCoverageFinding {
+  dimension: RepresentationDimension;
+  considered: boolean;
+  materiallyAffected: boolean;
+  representedByPerspectiveIds: readonly string[];
+  missingPerspectiveDescription: string | null;
+  evidenceIds: readonly string[];
+  notes: readonly string[];
+}
+
+export interface IntersectionalPerspectiveRequest {
+  id: string;
+  dimensions: readonly RepresentationDimension[];
+  reason: string;
+  generatedPerspectiveLabel: string;
+  requiresLivedExperienceConsultation: boolean;
+}
+
+export interface RepresentationReview {
+  id: string;
+  subjectType: "opportunity" | "charter" | "pricing" | "product" | "policy" | "automation" | "work_design";
+  subjectId: string;
+  coverage: readonly RepresentationCoverageFinding[];
+  intersectionalPerspectiveRequests: readonly IntersectionalPerspectiveRequest[];
+  unrepresentedMaterialGroups: readonly string[];
+  adequateForDecision: boolean;
+  rationale: string;
+  reviewedAt: string;
 }
 
 export interface NeedDefinition {
@@ -128,6 +220,7 @@ export interface FeasibilityDimensionFinding {
     | "environment"
     | "community"
     | "persona_impact"
+    | "representation"
     | "goodness";
   finding: string;
   confidence: ConfidenceAssessment;
