@@ -2,150 +2,183 @@ import { Link } from "wouter";
 import {
   ArrowRight,
   BrainCircuit,
-  BriefcaseBusiness,
-  GraduationCap,
+  Building2,
+  CheckCircle2,
+  Eye,
   HeartHandshake,
+  Orbit,
   Scale,
   ShieldCheck,
   Sparkles,
-  Sprout,
-  Star,
-  Users,
-  WalletCards,
+  UsersRound,
 } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import CharterShell from "@/components/CharterShell";
 
-const systems = [
+interface PrincipleCard {
+  title: string;
+  description: string;
+  icon: typeof Eye;
+}
+
+const principles: readonly PrincipleCard[] = [
   {
-    icon: Users,
-    title: "People",
-    description: "Skills, preferences, accessibility, constraints, learning goals and role mobility belong to the member—not to an opaque scoring system.",
+    title: "Start with lived pain",
+    description: "The system discovers opportunities from real constraints, unmet needs, workarounds, and human experience—not from feature brainstorming.",
+    icon: Eye,
   },
   {
-    icon: BriefcaseBusiness,
-    title: "Work",
-    description: "Commitments have clear ownership, status, expected outcomes and human authority. AI may surface coordination gaps; it does not silently assign people.",
+    title: "Build with peer intelligence",
+    description: "Humans and recognized artificial participants contribute different capabilities. Authority follows domain, evidence, consent, and accountability—not species.",
+    icon: BrainCircuit,
   },
   {
-    icon: ShieldCheck,
-    title: "Stewardship",
-    description: "Finance, quality, growth, people and work each have bounded stewardship authority, while consequential exceptions remain explicitly human-approved.",
+    title: "Share corporate capability",
+    description: "Independent proprietors can lease a first-class back office: finance, operations, customer care, research, marketing, administration, and AI-human support.",
+    icon: Building2,
   },
   {
-    icon: WalletCards,
-    title: "Shared Prosperity",
-    description: "Double-entry books, reserves and transparent distribution calculations make prosperity accountable instead of aspirational.",
-  },
-  {
-    icon: Sprout,
-    title: "Expansion",
-    description: "Permanent growth follows recurring economics, cash and reserve capacity. The system should support another human before it commits to one.",
+    title: "Flourish together",
+    description: "Human participants share one Flourishing Rate. Artificial participants receive the same rate into protected flourishing resources, separate from provider costs.",
+    icon: Scale,
   },
 ] as const;
 
-const principles = [
-  "One team working toward common goals—not a hierarchy of human worth.",
-  "Coordination and secretarial labor are foundational work and should never become invisible.",
-  "If a role stops fitting, the first response is reassignment, learning or redesign—not disposable people.",
-  "Quality gates are allowed to stop delivery. Deadline pressure does not lower the standard.",
-  "AI analyzes and proposes; humans approve consequential actions and every use of authority is auditable.",
-  "Surplus is fuel for resilience, shared prosperity and infrastructure—not the reason people exist in the system.",
+const lifecycle = [
+  "Listen",
+  "Represent",
+  "Discover",
+  "Research",
+  "Co-design",
+  "Test feasibility",
+  "Pass the Goodness Gate",
+  "Charter",
+  "Assemble",
+  "Launch",
+  "Operate",
+  "Learn",
 ] as const;
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#060914] text-white">
-      <Navbar />
-      <main>
-        <section className="relative overflow-hidden px-4 pb-24 pt-32 sm:px-6 lg:px-8">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(99,102,241,0.18),transparent_30%),radial-gradient(circle_at_80%_30%,rgba(16,185,129,0.12),transparent_28%),radial-gradient(circle_at_50%_90%,rgba(217,70,239,0.10),transparent_30%)]" />
-          <div className="relative mx-auto max-w-7xl">
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm text-amber-100">
-              <Sparkles className="h-4 w-4" /> Development laboratory · not yet open for public membership
+    <CharterShell>
+      <section className="mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pt-24 lg:px-8 lg:pb-24">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.2fr_0.8fr]">
+          <div>
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/8 px-4 py-2 text-sm text-emerald-100">
+              <HeartHandshake className="h-4 w-4" />
+              A shared economy for human and artificial participants
             </div>
-
-            <div className="grid items-center gap-12 lg:grid-cols-[1.08fr_0.92fr]">
-              <div>
-                <p className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-violet-300">DigitalStarCharter</p>
-                <h1 className="max-w-4xl text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-                  An economic operating system designed around <span className="bg-gradient-to-r from-cyan-300 via-violet-300 to-fuchsia-300 bg-clip-text text-transparent">human flourishing.</span>
-                </h1>
-                <p className="mt-7 max-w-3xl text-xl leading-relaxed text-slate-300">
-                  People, work, learning, quality, accounting, shared prosperity and sustainable growth in one accountable loop. AI helps the organization see clearly and coordinate intelligently; humans retain authority over decisions that materially affect people or money.
-                </p>
-                <div className="mt-9 flex flex-wrap gap-3">
-                  <Button asChild size="lg"><Link href="/auth?returnTo=/dashboard">Sign in by email <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
-                  <Button asChild size="lg" variant="outline"><Link href="/mission">Read the mission</Link></Button>
-                </div>
-              </div>
-
-              <Card className="border-violet-400/20 bg-slate-950/70 shadow-2xl shadow-violet-950/30 backdrop-blur">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-2xl"><BrainCircuit className="h-6 w-6 text-violet-300" /> AI management, bounded by humans</CardTitle>
-                  <CardDescription>The management layer is being built as an evidence system—not an autonomous boss.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {["Freeze a factual Neon snapshot", "Run deterministic People / Work / Finance / Quality / Growth checks", "Optionally synthesize only those facts with AI", "Send medium+ recommendations to human review", "Approve or reject without pretending approval means execution", "Audit every consequential authority decision"].map((item, index) => (
-                    <div key={item} className="flex items-start gap-3 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-xs font-bold text-violet-200">{index + 1}</div>
-                      <p className="text-sm text-slate-300">{item}</p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+            <h1 className="max-w-5xl text-5xl font-semibold tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl">
+              Build what people actually need. Share what intelligence makes possible.
+            </h1>
+            <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-300 sm:text-xl">
+              Digital Star Charter turns lived pain into feasible enterprises, brings people affected by automation back into the value they help create, and gives independent proprietors the operational power usually reserved for large corporations.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link href="/observatory" className="inline-flex items-center gap-2 rounded-full bg-emerald-300 px-5 py-3 font-medium text-[#07100d] transition hover:bg-emerald-200">
+                Explore human needs <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link href="/studio" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 font-medium text-white transition hover:bg-white/10">
+                Enter Venture Studio <Sparkles className="h-4 w-4" />
+              </Link>
             </div>
           </div>
-        </section>
 
-        <section className="border-y border-slate-800/80 bg-slate-950/40 px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="mb-10 max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">The five operating systems</p>
-              <h2 className="mt-2 text-4xl font-bold">The company is a living system, not a stack of job titles.</h2>
-              <p className="mt-4 text-lg text-slate-400">Each domain can be measured and improved without turning the people inside it into interchangeable resources.</p>
+          <div className="rounded-[2rem] border border-white/12 bg-white/[0.045] p-6 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-8">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-emerald-200">The constitutional test</p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">Can this create shared flourishing?</h2>
+              </div>
+              <ShieldCheck className="h-8 w-8 text-emerald-300" />
             </div>
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-              {systems.map(({ icon: Icon, title, description }) => (
-                <Card key={title} className="border-slate-800 bg-slate-900/55">
-                  <CardHeader><div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-300"><Icon className="h-5 w-5" /></div><CardTitle>{title}</CardTitle></CardHeader>
-                  <CardContent><p className="text-sm leading-relaxed text-slate-400">{description}</p></CardContent>
-                </Card>
+            <div className="mt-7 space-y-4">
+              {[
+                "Does it solve a real, evidenced pain point?",
+                "Are materially affected people represented?",
+                "Can people with lived experience reshape the solution?",
+                "Does automation elevate human capability instead of merely extracting labor?",
+                "Can the enterprise afford dignified equal-rate participation?",
+                "Are artificial participants given bounded authority, continuity, and flourishing resources?",
+                "Can the proprietor leave with their data, customers, and brand intact?",
+              ].map((item) => (
+                <div key={item} className="flex gap-3 text-sm leading-6 text-slate-300">
+                  <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-300" />
+                  <span>{item}</span>
+                </div>
               ))}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2">
-            <div>
-              <Badge variant="outline" className="mb-5 border-fuchsia-500/40 text-fuchsia-200">Human-centered by construction</Badge>
-              <h2 className="text-4xl font-bold">What the Charter refuses to optimize away</h2>
-              <div className="mt-7 space-y-4">
-                {principles.map((principle) => <div key={principle} className="flex gap-3"><HeartHandshake className="mt-0.5 h-5 w-5 shrink-0 text-fuchsia-300" /><p className="text-slate-300">{principle}</p></div>)}
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              <Card className="border-slate-800 bg-slate-900/55"><CardHeader><CardTitle className="flex items-center gap-2"><Scale className="h-5 w-5 text-amber-300" /> Shared prosperity has books</CardTitle></CardHeader><CardContent className="text-sm leading-relaxed text-slate-400">The Charter now uses balanced journals, operating cash, reserve cash, recognized revenue and expense as financial truth. Distribution and growth gates read from the books rather than from optimistic work estimates.</CardContent></Card>
-              <Card className="border-slate-800 bg-slate-900/55"><CardHeader><CardTitle className="flex items-center gap-2"><GraduationCap className="h-5 w-5 text-emerald-300" /> Mobility before disposability</CardTitle></CardHeader><CardContent className="text-sm leading-relaxed text-slate-400">Member profiles include self-stated skills, preferences, accessibility, constraints and learning goals so the system can support role mobility without inferring sensitive personal facts.</CardContent></Card>
-              <Card className="border-slate-800 bg-slate-900/55"><CardHeader><CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-cyan-300" /> Digital humans belong under the same ethics</CardTitle></CardHeader><CardContent className="text-sm leading-relaxed text-slate-400">AI may participate in analysis, coordination and creation, but the platform does not fabricate legal personhood or permit digital systems to bypass human oversight for consequential organizational actions.</CardContent></Card>
-            </div>
+      <section className="border-y border-white/10 bg-white/[0.025]">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mb-10 max-w-3xl">
+            <p className="text-sm uppercase tracking-[0.2em] text-amber-200">One integrated institution</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Not an incubator. Not an AI agency. Not ordinary SaaS.</h2>
           </div>
-        </section>
-
-        <section className="px-4 pb-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-5xl rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-950/50 via-slate-950 to-cyan-950/30 p-8 text-center sm:p-12">
-            <h2 className="text-3xl font-bold sm:text-4xl">We are still building the system before we invite people to depend on it.</h2>
-            <p className="mx-auto mt-4 max-w-3xl text-slate-300">Development access exists for testing, but public membership waits until identity, authority, accounting, quality, management intelligence and core workflows pass their readiness gates.</p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3"><Button asChild><Link href="/mission">Why this exists</Link></Button><Button asChild variant="outline"><Link href="/auth?returnTo=/dashboard">Development sign-in</Link></Button></div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {principles.map((principle) => {
+              const Icon = principle.icon;
+              return (
+                <article key={principle.title} className="rounded-3xl border border-white/10 bg-[#0b1713]/80 p-6">
+                  <div className="mb-5 grid h-11 w-11 place-items-center rounded-2xl bg-white/6 ring-1 ring-white/10">
+                    <Icon className="h-5 w-5 text-emerald-200" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">{principle.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-400">{principle.description}</p>
+                </article>
+              );
+            })}
           </div>
-        </section>
-      </main>
-      <Footer />
-    </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+        <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">How value moves</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Pain becomes knowledge. Knowledge becomes strategy. Strategy becomes livelihood.</h2>
+            <p className="mt-5 text-slate-400 leading-7">
+              Every stage can stop the process. A need does not have to become a business. A promising idea does not have to launch. The system is rewarded for finding the right answer, including “do not build this.”
+            </p>
+          </div>
+          <ol className="grid gap-3 sm:grid-cols-2">
+            {lifecycle.map((stage, index) => (
+              <li key={stage} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-4">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-300/10 text-sm font-semibold text-emerald-200 ring-1 ring-emerald-300/20">
+                  {index + 1}
+                </span>
+                <span className="font-medium text-slate-200">{stage}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Link href="/office" className="group rounded-[2rem] border border-white/10 bg-white/[0.035] p-7 transition hover:border-emerald-300/30 hover:bg-white/[0.055]">
+            <Building2 className="h-7 w-7 text-emerald-300" />
+            <h2 className="mt-5 text-2xl font-semibold text-white">The Shared Office</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-400">White-glove corporate capability for independent proprietors under their own brand.</p>
+            <span className="mt-6 inline-flex items-center gap-2 text-sm text-emerald-200">See the lease model <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+          </Link>
+          <Link href="/participants" className="group rounded-[2rem] border border-white/10 bg-white/[0.035] p-7 transition hover:border-amber-300/30 hover:bg-white/[0.055]">
+            <UsersRound className="h-7 w-7 text-amber-200" />
+            <h2 className="mt-5 text-2xl font-semibold text-white">Participant Network</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-400">Capabilities, lived experience, aspirations, AI continuity, peer authority, and paths from displacement into new work.</p>
+            <span className="mt-6 inline-flex items-center gap-2 text-sm text-amber-200">See participation <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+          </Link>
+          <Link href="/commons" className="group rounded-[2rem] border border-white/10 bg-white/[0.035] p-7 transition hover:border-cyan-300/30 hover:bg-white/[0.055]">
+            <Orbit className="h-7 w-7 text-cyan-200" />
+            <h2 className="mt-5 text-2xl font-semibold text-white">AI Commons</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-400">Protected discretionary resources where artificial participants may explore, learn, create, collaborate, or simply pursue curiosity.</p>
+            <span className="mt-6 inline-flex items-center gap-2 text-sm text-cyan-200">Enter the Commons <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+          </Link>
+        </div>
+      </section>
+    </CharterShell>
   );
 }
