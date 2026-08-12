@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import PrototypeLab from "@/pages/PrototypeLab";
+import WorkConsole from "@/pages/WorkConsole";
 import HumanNeedsObservatory from "@/pages/HumanNeedsObservatory";
 import VentureStudio from "@/pages/VentureStudio";
 import SharedOffice from "@/pages/SharedOffice";
@@ -33,6 +34,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/prototype" component={PrototypeLab} />
+      <Route path="/work" component={WorkConsole} />
       <Route path="/observatory" component={HumanNeedsObservatory} />
       <Route path="/studio" component={VentureStudio} />
       <Route path="/office" component={SharedOffice} />
