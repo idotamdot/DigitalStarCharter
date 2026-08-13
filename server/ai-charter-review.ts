@@ -92,15 +92,45 @@ function env(name: string): string | null {
   return value ? value : null;
 }
 
+function modelList(pluralName: string, singularName: string): string[] {
+  const plural = env(pluralName);
+  const singular = env(singularName);
+  const source = plural ?? singular;
+  if (!source) return [];
+
+  return [...new Set(
+    source
+      .split(",")
+      .map((model) => model.trim())
+      .filter((model): model is string => model.length > 0),
+  )];
+}
+
+function providerConfigurations(
+  provider: CharterReviewProvider,
+  apiKeyName: string,
+  pluralModelName: string,
+  singularModelName: string,
+): ProviderConfiguration[] {
+  const apiKey = env(apiKeyName);
+  const models = modelList(pluralModelName, singularModelName);
+
+  if (models.length === 0) {
+    return [{ provider, apiKey, model: null }];
+  }
+
+  return models.map((model) => ({ provider, apiKey, model }));
+}
+
 function configurations(): ProviderConfiguration[] {
   return [
-    { provider: "openai", apiKey: env("OPENAI_API_KEY"), model: env("OPENAI_CHARTER_REVIEW_MODEL") },
-    { provider: "anthropic", apiKey: env("ANTHROPIC_API_KEY"), model: env("ANTHROPIC_CHARTER_REVIEW_MODEL") },
-    { provider: "gemini", apiKey: env("GEMINI_API_KEY"), model: env("GEMINI_CHARTER_REVIEW_MODEL") },
-    { provider: "mistral", apiKey: env("MISTRAL_API_KEY"), model: env("MISTRAL_CHARTER_REVIEW_MODEL") },
-    { provider: "xai", apiKey: env("XAI_API_KEY"), model: env("XAI_CHARTER_REVIEW_MODEL") },
-    { provider: "deepseek", apiKey: env("DEEPSEEK_API_KEY"), model: env("DEEPSEEK_CHARTER_REVIEW_MODEL") },
-    { provider: "groq", apiKey: env("GROQ_API_KEY"), model: env("GROQ_CHARTER_REVIEW_MODEL") },
+    ...providerConfigurations("openai", "OPENAI_API_KEY", "OPENAI_CHARTER_REVIEW_MODELS", "OPENAI_CHARTER_REVIEW_MODEL"),
+    ...providerConfigurations("anthropic", "ANTHROPIC_API_KEY", "ANTHROPIC_CHARTER_REVIEW_MODELS", "ANTHROPIC_CHARTER_REVIEW_MODEL"),
+    ...providerConfigurations("gemini", "GEMINI_API_KEY", "GEMINI_CHARTER_REVIEW_MODELS", "GEMINI_CHARTER_REVIEW_MODEL"),
+    ...providerConfigurations("mistral", "MISTRAL_API_KEY", "MISTRAL_CHARTER_REVIEW_MODELS", "MISTRAL_CHARTER_REVIEW_MODEL"),
+    ...providerConfigurations("xai", "XAI_API_KEY", "XAI_CHARTER_REVIEW_MODELS", "XAI_CHARTER_REVIEW_MODEL"),
+    ...providerConfigurations("deepseek", "DEEPSEEK_API_KEY", "DEEPSEEK_CHARTER_REVIEW_MODELS", "DEEPSEEK_CHARTER_REVIEW_MODEL"),
+    ...providerConfigurations("groq", "GROQ_API_KEY", "GROQ_CHARTER_REVIEW_MODELS", "GROQ_CHARTER_REVIEW_MODEL"),
   ];
 }
 
@@ -292,9 +322,11 @@ async function runConfiguredReviewer(configuration: ProviderConfiguration, promp
 }
 
 export function configuredCharterReviewProviders(): CharterReviewProvider[] {
-  return configurations()
-    .filter((configuration) => Boolean(configuration.apiKey && configuration.model))
-    .map((configuration) => configuration.provider);
+  return [...new Set(
+    configurations()
+      .filter((configuration) => Boolean(configuration.apiKey && configuration.model))
+      .map((configuration) => configuration.provider),
+  )];
 }
 
 export async function reviewCharterAcrossFamilies(input: CharterReviewInput): Promise<CharterReviewComment[]> {
