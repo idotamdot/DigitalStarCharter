@@ -3,6 +3,11 @@ import { z } from "zod";
 import { calculateRevenueWaterfall } from "@shared/charter-economics";
 import { prioritizePainSignal, scoreFeasibility } from "@shared/charter-strategy";
 import { representationDimensions } from "@shared/venture-domain";
+import {
+  configuredCharterReviewProviders,
+  reviewCharterAcrossFamilies,
+} from "./ai-charter-review";
+import { requireCapability, writeAuthorityAudit } from "./access-control";
 
 const painSignalSchema = z.object({
   severity: z.enum(["low", "moderate", "high", "critical"]),
@@ -50,6 +55,11 @@ const revenueWaterfallSchema = z.object({
   reinvestmentReserveMinor: z.number().int().min(0),
 });
 
+const charterReviewSchema = z.object({
+  proposal: z.string().trim().min(1).max(50_000),
+  context: z.string().trim().max(20_000).optional(),
+});
+
 export function registerCharterRoutes(app: Express): void {
   app.get("/api/charter/representation-dimensions", (_req: Request, res: Response) => {
     res.json({ dimensions: representationDimensions });
@@ -69,4 +79,42 @@ export function registerCharterRoutes(app: Express): void {
     const input = revenueWaterfallSchema.parse(req.body);
     res.json(calculateRevenueWaterfall(input));
   });
+
+  app.get(
+    "/api/charter/ai-review/providers",
+    requireCapability("ai.review"),
+    (_req: Request, res: Response) => {
+      res.json({ configuredProviders: configuredCharterReviewProviders() });
+    },
+  );
+
+  app.post(
+    "/api/charter/ai-review",
+    requireCapability("ai.review"),
+    async (req: Request, res: Response) => {
+      const input = charterReviewSchema.parse(req.body);
+      const comments = await reviewCharterAcrossFamilies(input);
+
+      await writeAuthorityAudit({
+        actor: req.member,
+        authority: "ai.review",
+        action: "charter.multi_model_review",
+        targetType: "charter_proposal",
+        outcome: "advisory_review_completed",
+        metadata: {
+          providers: comments.map((comment) => ({
+            provider: comment.provider,
+            model: comment.model,
+            status: comment.status,
+          })),
+        },
+      });
+
+      res.json({
+        advisoryOnly: true,
+        independentResponses: true,
+        comments,
+      });
+    },
+  );
 }
