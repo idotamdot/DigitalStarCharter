@@ -6,9 +6,9 @@ Digital Star Charter can solicit independent advisory comments from multiple mod
 
 The review council is intentionally plural and non-voting.
 
-Each configured provider receives the same proposal independently. A reviewer does not see the other reviewers' answers before responding. The API returns every provider response separately so disagreement, minority concerns, and provider-specific perspectives remain visible.
+Each configured reviewer receives the same proposal independently. A reviewer does not see the other reviewers' answers before responding. The API returns every provider/model response separately so disagreement, minority concerns, and model-specific perspectives remain visible.
 
-No provider becomes the constitutional authority. Model count is not a vote. Apparent consensus is evidence to consider, not a decision rule.
+No provider or model becomes the constitutional authority. Model count is not a vote. Apparent consensus is evidence to consider, not a decision rule.
 
 ## Supported providers
 
@@ -22,9 +22,13 @@ The server currently supports:
 - DeepSeek
 - Groq
 
-A provider participates only when both its API key and its `*_CHARTER_REVIEW_MODEL` environment variable are configured.
+A provider may contribute one or more exact model reviewers using the same server-side API key when that provider account permits access to those models.
 
-Model names are deliberately environment-driven rather than hard-coded so the application does not silently move to a newer model family when a provider changes its catalog.
+Use `*_CHARTER_REVIEW_MODELS` for a comma-separated list of exact model IDs. The singular `*_CHARTER_REVIEW_MODEL` variables remain supported for one-model configurations.
+
+For example, OpenAI may be configured with both GPT-5.6 Sol and GPT-4o. They are returned as two separately attributed comments under the same provider and must not be collapsed into one "OpenAI answer."
+
+Model names are deliberately environment-driven rather than hard-coded so the application does not silently move to a newer model when a provider changes its catalog.
 
 ## Security
 
@@ -32,13 +36,13 @@ All provider credentials are server-only environment variables. Do not create `V
 
 The review endpoints require the existing `ai.review` Charter capability. The currently configured administrator has this capability by default.
 
-Review runs are recorded in the authority audit log with provider, model, and completion status. The audit entry does not store provider secrets or the full generated comment.
+Review runs are recorded in the authority audit log with provider, exact model, and completion status. The audit entry does not store provider secrets or the full generated comment.
 
 ## Endpoints
 
 ### `GET /api/charter/ai-review/providers`
 
-Returns only the providers that have both a key and a model configured.
+Returns the provider families that have at least one key/model pairing configured.
 
 ### `POST /api/charter/ai-review`
 
@@ -59,8 +63,8 @@ Response shape:
   "independentResponses": true,
   "comments": [
     {
-      "provider": "anthropic",
-      "model": "configured-model-name",
+      "provider": "openai",
+      "model": "exact-model-id",
       "status": "ok",
       "comment": "Independent advisory review...",
       "error": null
@@ -69,7 +73,7 @@ Response shape:
 }
 ```
 
-Providers without complete configuration return `not_configured`; a provider failure returns `error` without preventing the other configured families from completing their reviews.
+Providers without complete configuration return `not_configured`; an individual model failure returns `error` without preventing the other configured reviewers from completing their reviews.
 
 ## Review instruction
 
@@ -80,10 +84,11 @@ Reviewers are explicitly instructed not to use a claim or denial of consciousnes
 ## Constitutional workflow
 
 1. A human or artificial participant proposes Charter language.
-2. Authorized governance sends the exact same proposal to the multi-model council.
-3. Each provider returns an independent advisory comment.
+2. Authorized governance sends the exact same proposal to every configured reviewer.
+3. Each provider/model returns an independent advisory comment.
 4. Humans and recognized artificial participants examine agreements and disagreements.
-5. Material objections remain visible in the record.
-6. Humans with lawful authority adopt, reject, or revise the amendment under existing Charter governance.
+5. Every response is preserved with provider, exact model ID, timestamp, and full text before synthesis.
+6. Material objections remain visible in the record.
+7. Humans with lawful authority adopt, reject, or revise the amendment under existing Charter governance.
 
 The council is a means of hearing more perspectives. It is not a substitute for responsibility.
